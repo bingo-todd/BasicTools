@@ -89,7 +89,7 @@ A collection of little python scripts
   # no_doc: not doc
   # tight: not blank line
   ```
-  result show in wav_tools
+  result show in [wav_tools](#wav_tools)
 
 ## wav_tools
 
