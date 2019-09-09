@@ -94,6 +94,7 @@ A collection of little python scripts
 ## wav_tools
 
   Functions related to signal process
+  
   Structure of wav_tools derived by `show_struct`
   ```
   |wav_tools
