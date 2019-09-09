@@ -1,7 +1,19 @@
 # Little python toolbox
 A collection of little python scripts
 
-- **TFData**
+<!-- TOC -->
+
+- [Little python toolbox](#little-python-toolbox)
+  - [TFData](#tfdata): data pipe for tensorflow
+  - [process_bar](#process_bar)
+  - [query_resrc](#query_resrc): get cpu and memory usage
+  - [reverb-time](#reverb-time): calculte RT60 from room impulse response(RIR)
+  - [show_struct](#show_struct): print functions in a given scripts
+  - [wav_tools](#wav_tools): functions related to signal process
+
+<!-- /TOC -->
+
+## TFData
 
   Data pipe for tensorflow
 
@@ -34,9 +46,9 @@ A collection of little python scripts
         train_tfdata.empty_queue(self._sess)
   ```
 
-- **process_bar**
+## process_bar
 
-  Process bar, additonal can show cpu and memory percentage
+  Process bar, additonally can show cpu and memory percentage
 
   E.g.
 
@@ -50,9 +62,9 @@ A collection of little python scripts
   if `is_show_resrc=True`
    <pre>|=======================                           | process 47% 	 Cpu:1.60% Mem:26.78%</pre>
 
-- **query_resrc**
+## query_resrc
 
-  Print cpu and memory usage(%)
+  Get cpu and memory usage(%)
 
   E.g.
   ```shell
@@ -61,11 +73,11 @@ A collection of little python scripts
 
   `cpu:1.70%  mem:30.09%`
 
-- **reverb-time**
+## reverb-time
 
   Calculte RT60 from room impulse response(RIR)
 
-- **show_struct**
+## show_struct
 
   Print functions in a given scripts
 
@@ -77,9 +89,9 @@ A collection of little python scripts
   # no_doc: not doc
   # tight: not blank line
   ```
-  result show in **wav_tools**
+  result show in wav_tools
 
-- **wav_tools**
+## wav_tools
 
   Functions related to signal process
   Structure of wav_tools derived by `show_struct`
