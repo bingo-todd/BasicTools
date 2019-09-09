@@ -2,11 +2,11 @@ import numpy as np
 import subprocess
 
 class process_bar(object):
-    def __init__(self,max_value=100,is_print_resrc=False):
+    def __init__(self,max_value=100,is_show_resrc=False):
 
         self.max_value = max_value
         self.value = -1.
-        self.is_print_resrc = is_print_resrc
+        self.is_show_resrc = is_show_resrc
 
     def get_cur_value(self):
         print(self.value)
@@ -18,13 +18,16 @@ class process_bar(object):
             self.value = np.mod(value,self.max_value)
 
         p = np.float32(self.value+1)/self.max_value
-        if self.is_print_resrc:
-            print('\r|{0:<50}| process{1:>2.0%} \t Cpu:{2[0]:.2f} Mem:{2[1]:.2f}'.format('='*np.int(p*50),p,
+        if self.is_show_resrc:
+            print('\r|{0:<50}| process{1:>4.0%} \t Cpu:{2[0]:<.2f}% Mem:{2[1]:<.2f}%'.format('='*np.int(p*50),p,
                                                            self.query_resrc()),
                  flush=True,end='')
         else:
             print('\r|{:<50}| process{:>4.0%}'.format('='*np.int(p*50),p),
                                                       flush=True,end='')
+
+        if self.value+1 == self.max_value:
+            print('\n')
 
 
     def query_resrc(self,is_print=False):
@@ -47,3 +50,10 @@ class process_bar(object):
                                                                 mem_used_percentage))
 
         return [cpu_used_percentage,mem_used_percentage]
+
+if __name__ == '__main__':
+    from process_bar import process_bar
+    # p = process_bar(100)
+    p = process_bar(100,is_show_resrc=True) # show current cpu and memory usage
+    for i in range(100):
+      p.update()

@@ -7,16 +7,16 @@ def RT60(rir,fs,is_plot=False):
         Args:
             rir: room impulse response
             fs: sample frequency
-            
+
         Returns:
             estimated RT60 in second
     """
     rir = np.reshape(rir,newshape=[-1,1])
     rir_duration = np.float32(rir.shape[0])/fs
-        
+
     start_pos =0
     end_pos = rir.shape[0]
-    # 
+    #
     iidc = np.flipud(np.cumsum(np.flipud(rir**2)))# inverse integration decay curve, whole rir
     iidc_norm = 10*np.log10(iidc/np.max(iidc))
 
@@ -30,7 +30,7 @@ def RT60(rir,fs,is_plot=False):
                         deg=1)
     slope = coeffs[0]
     RT = -60.0/slope
-    
+
     if is_plot:
         plt.figure()
         axs = plt.subplot()
@@ -41,4 +41,3 @@ def RT60(rir,fs,is_plot=False):
         plt.title('RT30=%.2f'%RT)
         plt.xlabel('time(s)'); plt.ylabel('amplitude(dB)')
     return RT
-    
