@@ -109,7 +109,8 @@ class wav_tools:
 
     @staticmethod
     def cal_power(data):
-        """calculate the engergy of given signal"""
+        """calculate the engergy of given signal
+        """
         # data_len = np.count_nonzero(data>data.max()/1000000)
         data_power = np.sum(np.square(data))/data_len
         return data_power
@@ -130,42 +131,62 @@ class wav_tools:
 
 
     @staticmethod
-    def frame_x(x_list,frame_size,overlap_size):
-        N_sample = np.min([x.shape[0] for x in x_list])
+    def frame_x(x,frame_size,overlap_size,win_func=np.ones,window=None):
+        """Frame single-channel signal
+        Args:
+            x: single-channel signal
+            frame_size: frame length in sample
+            overlap_size: overlap in sample
+            win_func: window function default np.ones, rectangular window
+            window: numpy array, specify the window directly
+        Returns:
+            frames, [N_frame,frame_len]
+        """
+        N_sample = x.shape[0]
         N_frame = np.int(np.floor(np.float32(N_sample-frame_size)/overlap_size)+1)
+
+        # window function
+        if window is None:
+            if win_func in [np.ones,np.hamming,np.hanning]:
+                window = win_func(N_sample)
+            else:
+                raise Exception('illegal win_func')
+
         for frame_i in range(N_frame):
             start_pos = frame_i*overlap_size
             end_pos = frame_i*overlap_size+frame_size
-            yield [x[start_pos:end_pos] for x in x_list]
+            frame = np.multiply(x[start_pos:end_pos],window)
+            yield frame
 
 
     @staticmethod
-    def cal_instant_SNR(tar,inter,fs,frame_len=20e-3,overlap=10e-3,is_plot=False):
+    def cal_SNR_frame(tar,inter,fs,frame_len=20e-3,overlap=10e-3,is_plot=False):
         """
         Calculate SNR frame by frame
         Args:
             tar: target signal, single channel
             inter: interference signal, single channel
-            frame_size: frame duration (s)
+            frame_len: frame length (s)
             overlap: overlap (s)
+            is_plot: switch of ploting, default False
         Returns:
             SNR of each frame. shape:[N_frame]
         """
         tar = np.squeeze(tar)
         inter = np.squeeze(inter)
         if len(tar.shape)>1 or len(inter.shape)>1:
-            raise Exception('tar or inter should only have one dimension')
+            raise Exception('tar or inter should only has one dimension')
 
         frame_size = np.int(fs*frame_len)
         overlap_size = np.int(fs*overlap)
-        frame_iter = wav_tools.frame_x([tar,inter],frame_size,overlap_size)
+        frames = wav_tools.frame_x([tar,inter],frame_size,overlap_size)
         snrs = np.asarray([wav_tools.cal_SNR(tar_frame,inter_frame)
-                            for tar_frame,inter_frame in frame_iter])
+                            for tar_frame,inter_frame in frames])
 
         if is_plot:
             N_sample = np.min([tar.shape[0],inter.shape[0]])
             N_frame = snrs.shape[0]
-
+            # waveform of tar and inter
             fig = plt.figure(dpi=120)
             axe1 = fig.subplots(1,1)
             time_axis = np.arange(N_sample)/fs
@@ -173,7 +194,7 @@ class wav_tools:
             axe1.plot(time_axis,inter[:N_sample],label='interference')
             axe1.set_xlabel('time(s)'); axe1.set_ylabel('amp')
             axe1.legend(loc='upper left')
-
+            # SNRs of frames
             axe2 = axe1.twinx()
             axe2.set_xlabel('time(s)'); axe2.set_ylabel('SNR(dB)')
             axe2.plot((np.arange(N_frame)+1)*overlap,snrs,color='red',linewidth=2,label='SNR')# center of frame
@@ -212,9 +233,16 @@ class wav_tools:
 
 
     @staticmethod
-    def cal_instant_ccf(wav,fs,frame_len=20e-3,overlap=10e-3,max_delay=None):
-        """
-
+    def cal_ccf_frame(wav,fs,frame_len=20e-3,overlap=10e-3,max_delay=None):
+        """Calculate cross correlation of each frame
+        Args:
+            wav: two-channel signal
+            fs: sample frequency
+            frame_len: frame length(s)
+            overlap: overlap of two continue frames(s)
+            max_delay: delay(\tau) range of ccf
+        Returns:
+            ccfs of each frame, [N_frame,ccf_len]
         """
         frame_size = np.int(fs*frame_len)
         overlap_size = np.int(fs*overlap)
@@ -222,7 +250,7 @@ class wav_tools:
             max_delay_size = np.int(fs*max_delay)
         else:
             max_delay_size = None
-            
+
         frame_iter = wav_tools.frame_x([wav],frame_size,overlap_size)
         ccfs = np.asarray([wav_tools.cal_ccf_fft(frame,frame,max_delay_size)/(np.sum(frame**2))
                                 for [frame] in frame_iter])
@@ -231,9 +259,7 @@ class wav_tools:
 
     @staticmethod
     def gen_noise(ref,SNR):
-        """
-        Generate white noise with desired SNR
-
+        """Generate white noise with desired SNR relative to ref
         Args:
             SNR: target to reference ration
             ref: reference signal of SNR
@@ -244,6 +270,7 @@ class wav_tools:
         wn = set_SNR(wn_raw,ref,SNR)
         return wn
 
+
     @staticmethod
     def VAD(wav,fs,frame_len=20e-3,overlap=20e-3,thd=40, is_plot=False):
         """ Energy based VAD.
@@ -253,18 +280,19 @@ class wav_tools:
         Args:
             wav: single channel signal
             fs: sample frequency
-            frame_len: default value 20e-3
-            thd: the maximal energy difference between frames, default to 40dB
-            is_plot: False
+            frame_len: default value 20e-3 s
+            thd: the maximal energy difference between frames, default 40dB
+            is_plot: switch of ploting, default False
         Returns:
-            vad result of each frame [N_frame,2], 0: frame start position, 1: frame end position
+            vad result of each frame [N_frame,2],
+            0: frame start position, 1: frame end position
         """
-
         frame_size = np.int(fs*frame_len)
         overlap_size = np.int(fs*overlap)
 
         frame_iter = wav_tools.frame_x([wav],frame_size,overlap_size)
-        energy_array = np.asarray([np.sum(frame**2) for [frame] in frame_iter],dtype=np.float32).reshape([-1,])
+        energy_array = np.asarray([np.sum(frame**2)
+                    for [frame] in frame_iter],dtype=np.float32).reshape([-1,])
         max_energy = np.max(energy_array)
 
         N_frame = energy_array.shape[0]
@@ -294,58 +322,26 @@ class wav_tools:
 
     @staticmethod
     def truncate_speech(wav,fs,frame_len=20e-3,is_plot=False):
-        """ energy based VAD,
+        """
         """
         frame_size = int(frame_len*fs)
         N_frame = int(wav.shape[0]/frame_size)
-
         wav_croped = wav[:frame_size*N_frame]
-
         frames = np.reshape(wav_croped,(frame_size,N_frame),order='F')
         energy_frames = np.sum(frames**2,axis=0)
 
+        # find start and end time of speech
         thd = np.max(energy_frames)/(10**4)# 40 dB
         vad_frame_index = np.nonzero(energy_frames>thd)[0]
         start_frame_index = vad_frame_index[0]
         end_frame_index = vad_frame_index[-1]
 
-        wav_truncated = np.reshape(frames[:,start_frame_index:end_frame_index+1],[-1,1],order='F')
+        # clip out silent segments at begining and ending
+        wav_truncated = np.reshape(frames[:,start_frame_index:end_frame_index+1],
+                                    [-1,1],order='F')
 
         return wav_truncated
 
-
-    @staticmethod
-    def frame_data(x,frame_size,shift_len,wind_f=None):
-        """
-        Input:
-            x: data to be framed, 1/2 dimension array(2d:[data_len,channel_num])
-            frame_size
-            shift_len
-            wind_f: 1 dimension array with size of frame_size
-        Output:
-            framed_data: [N_frame,frame_size,channel_num]
-        """
-        x_len = x.shape[0]
-
-        if len(x.shape)==1:
-            channel_num=1
-            x.shape = [x_len,1]
-        elif len(x.shape)==2:
-            channel_num = x.shape[1]
-        else:
-            raise Exception('x should have two dimensions at most')
-
-        N_frame=np.int16(np.floor((x_len-frame_size)/shift_len))+1
-        x_framed=np.zeros((N_frame,frame_size,channel_num),dtype=np.float32)
-    #     wind_f = np.hanning(frame_size)[:,np.newaxis]
-        for frame_i in range(N_frame):
-            frame_pos=frame_i*shift_len
-            x_framed[frame_i,:,:]=x[frame_pos:frame_pos+frame_size,:]
-
-        if wind_f is not None:
-            x_framed = np.multiply(x_framed,wind_f[np.newaxis,:,np.newaxis])
-
-        return np.squeeze(x_framed)
 
     @staticmethod
     def cal_snr(tar,interfer,axis=-1):
@@ -363,8 +359,7 @@ class wav_tools:
     def plot_wav_spec(wav_list,label_list=None,
                       fs=16000,frame_len=20e-3,
                       y_axis_type='mel',figsize=None):
-        """
-        plot spectrogram of given len
+        """plot spectrogram of given len
         Args:
             wav_list: list of numpy 1d arrays
             label_list: labels of each wav
