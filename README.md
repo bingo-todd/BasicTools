@@ -2,8 +2,11 @@
 A collection of little python scripts
 
 - **TFData**
+
   Data pipe for tensorflow
+
   E.g.
+
   ```python
   with tf.Session() as sess:
     coord = tf.train.Coordinator()
@@ -32,21 +35,25 @@ A collection of little python scripts
   ```
 
 - **process_bar**
+
   Process bar, additonal can show cpu and memory percentage
+
   E.g.
+
   ```python
   from process_bar import process_bar
   p = process_bar(100,is_show_resrc) # show current cpu and memory usage
   for i in range(100):
     p.update()
   ```
-
   if `is_show_resrc=False` <pre>|============================                      | process 56%</pre>
   if `is_show_resrc=True`
    <pre>|=======================                           | process 47% 	 Cpu:1.60% Mem:26.78%</pre>
 
 - **query_resrc**
+
   Print cpu and memory usage(%)
+
   E.g.
   ```shell
   python query_resource.py
@@ -55,20 +62,25 @@ A collection of little python scripts
   `cpu:1.70%  mem:30.09%`
 
 - **reverb-time**
+
   Calculte RT60 from room impulse response(RIR)
 
 - **show_struct**
+
   Print functions in a given scripts
+
   E.g.
+
   ```shell
   python show_struct py_file_path options
   # options
   # no_doc: not doc
   # tight: not blank line
   ```
-  result is show in **wav_tools**
+  result show in **wav_tools**
 
 - **wav_tools**
+
   Functions related to signal process
   Structure of wav_tools derived by `show_struct`
   ```
