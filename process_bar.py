@@ -5,7 +5,7 @@ class process_bar(object):
     def __init__(self,max_value=100,is_show_resrc=False):
 
         self.max_value = max_value
-        self.value = -1.
+        self.value = 0.
         self.is_show_resrc = is_show_resrc
 
     def get_cur_value(self):
@@ -17,13 +17,15 @@ class process_bar(object):
         else:
             self.value = np.mod(value,self.max_value)
 
-        p = np.float32(self.value+1)/self.max_value
+        p = np.float32(self.value)/self.max_value
+        # finish_symbol = '>'
+        # rest_symbol = '='
         if self.is_show_resrc:
-            print('\r|{0:<50}| process{1:>4.0%} \t Cpu:{2[0]:<.2f}% Mem:{2[1]:<.2f}%'.format('='*np.int(p*50),p,
+            print('\r{0:=<50} process{1:>4.0%} \t Cpu:{2[0]:<.2f}% Mem:{2[1]:<.2f}%'.format('>'*np.int(p*50),p,
                                                            self.query_resrc()),
                  flush=True,end='')
         else:
-            print('\r|{:<50}| process{:>4.0%}'.format('='*np.int(p*50),p),
+            print('\r{=:<50} process{:>4.0%}'.format('>'*np.int(p*50),p),
                                                       flush=True,end='')
 
         if self.value == self.max_value:
