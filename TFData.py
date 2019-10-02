@@ -53,19 +53,19 @@ class TFData(object):
         #
         self.x_shape = x_shape
         self.y_shape = y_shape
-
         self.batch_size = batch_size
         # data queue
-        self.x_queue = tf.FIFOQueue(capacity=batch_size*batch_num_queue,
+        self.x_queue = tf.queue.FIFOQueue(capacity=batch_size*batch_num_queue,
                                dtypes=tf.float32,
-                               shapes=self.x_shape[1:])
-        self.y_queue = tf.FIFOQueue(capacity=batch_size*batch_num_queue,
+                               shapes=tf.TensorShape(self.x_shape[1:]))
+
+        self.y_queue = tf.queue.FIFOQueue(capacity=batch_size*batch_num_queue,
                                dtypes=tf.float32,
-                               shapes=self.y_shape[1:])
+                               shapes=tf.TensorShape(self.y_shape[1:]))
 
         # enqueue op
-        self.x_placeholder = tf.placeholder(dtype=tf.float32,shape=self.x_shape)
-        self.y_placeholder = tf.placeholder(dtype=tf.float32,shape=self.y_shape)
+        self.x_placeholder = tf.compat.v1.placeholder(dtype=tf.float32,shape=self.x_shape)
+        self.y_placeholder = tf.compat.v1.placeholder(dtype=tf.float32,shape=self.y_shape)
 
         self.x_enqueue = self.x_queue.enqueue_many([self.x_placeholder])
         self.y_enqueue = self.y_queue.enqueue_many([self.y_placeholder])

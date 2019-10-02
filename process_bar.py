@@ -26,7 +26,7 @@ class process_bar(object):
             print('\r|{:<50}| process{:>4.0%}'.format('='*np.int(p*50),p),
                                                       flush=True,end='')
 
-        if self.value+1 == self.max_value:
+        if self.value == self.max_value:
             print('\n')
 
 
