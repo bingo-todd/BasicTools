@@ -1,1 +1,3 @@
 __pycache__/
+dist/
+basic_tools/__pycache__/

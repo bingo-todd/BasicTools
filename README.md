@@ -1,23 +1,24 @@
-# Little python toolbox
-A collection of little python scripts
+# Small python toolbox
+A collection of python scripts,
 
-<!-- TOC -->
+file structure
+```shell
+basic_tools
+├── ccf.py  #cross-correlation functions(ccf,gcc-phat)
+├── __init__.py
+├── process_bar.py
+├── query_resrc.py  #get cpu and memory usage
+├── reverb_time.py  #calculte RT60 from room impulse response(RIR)
+├── TFData.py # data pipe for tensorflow
+└── wav_tools.py  #functions related to signal process
+```
 
-- [Little python toolbox](#little-python-toolbox)
-  - [TFData](#tfdata): data pipe for tensorflow
-  - [process_bar](#process_bar)
-  - [query_resrc](#query_resrc): get cpu and memory usage
-  - [reverb-time](#reverb-time): calculte RT60 from room impulse response(RIR)
-  - [show_struct](#show_struct): print functions in a given scripts
-  - [wav_tools](#wav_tools): functions related to signal process
-
-<!-- /TOC -->
 
 ## TFData
 
   Data pipe for tensorflow
 
-  E.g.
+  Example
 
   ```python
   with tf.Session() as sess:
@@ -50,7 +51,7 @@ A collection of little python scripts
 
   Process bar, additonally can show cpu and memory percentage
 
-  E.g.
+  Example
 
   ```python
   from process_bar import process_bar
@@ -66,7 +67,8 @@ A collection of little python scripts
 
   Get cpu and memory usage(%)
 
-  E.g.
+  Example
+
   ```shell
   python query_resource.py
   ```
@@ -77,60 +79,10 @@ A collection of little python scripts
 
   Calculte RT60 from room impulse response(RIR)
 
-## show_struct
-
-  Print functions in a given scripts
-
-  E.g.
-
-  ```shell
-  python show_struct py_file_path options
-  # options
-  # no_doc: not doc
-  # tight: not blank line
-  ```
-  result show in [wav_tools](#wav_tools)
-
 ## wav_tools
 
   Functions related to signal process
-  
+
   Structure of wav_tools derived by `show_struct`
   ```
-  |wav_tools
-  |
-  |-functions
-  |
-  |--BRIR_filter(src, BRIR)
-  |
-  |--BRIR_filter_fft(src, BRIR)
-  |
-  |--VAD(wav, fs, frame_len=0.02, overlap=0.02, thd=40, is_plot=False)
-  |
-  |--cal_SNR(tar, ref)
-  |
-  |--cal_SNR_frame(tar, inter, fs, frame_len=0.02, overlap=0.01, is_plot=False)
-  |
-  |--cal_ccf_fft(x1, x2, max_delay_size=None)
-  |
-  |--cal_ccf_frame(wav, fs, frame_len=0.02, overlap=0.01, max_delay=None)
-  |
-  |--cal_power(data)
-  |
-  |--cal_snr(tar, interfer, axis=-1)
-  |
-  |--frame_x(x, frame_size, overlap_size, win_func=numpy.ones, window=None)
-  |
-  |--gen_noise(ref, SNR)
-  |
-  |--plot_wav_spec(wav_list, label_list=None, fs=16000, frame_len=0.02, y_axis_type=mel, figsize=None)
-  |
-  |--set_SNR(tar, ref, SNR)
-  |
-  |--truncate_speech(wav, fs, frame_len=0.02, is_plot=False)
-  |
-  |--wav_read(file_path)
-  |
-  |--wav_write(signal, fs, file_path)
-  |
   ```
