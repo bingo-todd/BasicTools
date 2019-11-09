@@ -36,24 +36,22 @@ def plot_contour(ax,*args,line_container=None,**kwargs):
     contour_set = ax.contour(*args,**kwargs)
     return contour_set.collections
 
-def imshow(Z,x=None,y=None,ax=None,vmin=None,vmax=None,**kwargs):
+def imshow(ax,Z,x=None,y=None,vmin=None,vmax=None,**kwargs):
     if x is None or y is None:
-        x_len,y_len = Z.shape
+        y_len,x_len = Z.shape
         x = np.arange(x_len)
         y = np.arange(y_len)
-    if ax is None:
-        fig,ax = plt.subplots(1,1)
 
     if vmin is None or vmax is None:
         vmin = np.min(Z)
         vmax = np.max(Z)
-    Z = (Z-vmin)/(vmax-vmin)
+    Z_norm = (np.clip(Z,vmin,vmax)-vmin)/(vmax-vmin)
 
     basic_settings = {'cmap':cm.coolwarm,'interpolation':'bilinear'}
     basic_settings.update(kwargs)
 
     im = NonUniformImage(ax,**basic_settings,extent=(x[0],x[1],y[0],y[-1]))
-    im.set_data(x,y,Z.T)
+    im.set_data(x,y,Z_norm)
     ax.images.append(im)
     ax.set_xlim([x[0],x[-1]])
     ax.set_ylim([y[0],y[-1]])
@@ -96,6 +94,104 @@ def plot_bar(*mean_std,legend=None,**kwargs):
         ax.legend(legend)
 
     ax.set(**kwargs)
+    return fig
+
+
+def break_plot():
+    x = np.random.rand(10)
+    x[0] = -100
+    fig= plt.figure()
+    ax1 = plt.subplot2grid((2,2),(0,1))
+    ax1.plot(x)
+    ax1.set_ylim((0,1))
+
+    ax2 = plt.subplot2grid((2,2),(1,1))
+    ax2.plot(x)
+    ax2.set_ylim(-120,-80)
+
+    ax1.spines['bottom'].set_visible(False)
+    ax2.spines['top'].set_visible(False)
+    ax1.xaxis.tick_top()
+    ax1.tick_params(labeltop=False)  # don't put tick labels at the top
+    ax2.xaxis.tick_bottom()
+
+    d = .015  # how big to make the diagonal lines in ax coordinates
+    # arguments to pass to plot, just so we don't keep repeating them
+    kwargs = dict(transform=ax1.transAxes, color='k', clip_on=False)
+    ax1.plot((-d, +d), (-d, +d), **kwargs)        # top-left diagonal
+    ax1.plot((1 - d, 1 + d), (-d, +d), **kwargs)  # top-right diagonal
+
+    kwargs.update(transform=ax2.transAxes)  # switch to the bottom ax
+    ax2.plot((-d, +d), (1 - d, 1 + d), **kwargs)  # bottom-left diagonal
+    ax2.plot((1 - d, 1 + d), (1 - d, 1 + d), **kwargs)  # bottom-right diagonal
+
+    savefig(fig,'break_axis')
+
+
+def plot_wav_spec(wav_all,label_list=None,fs=None,frame_len=1024,
+                  shift_len=512,yscale='mel'):
+    """plot spectrogram of given len
+    Args:
+        wav_all: list of 1-channel signal
+        label_list: labels of each wav
+        fs: sample frequency
+        frame_dur:
+        yaxis_type: options 'mel'
+    """
+    import fft
+    from auditory_scale import erb
+    from auditory_scale import mel
+
+    if  isinstance(wav_all,np.ndarray):
+        wav_all = [wav_all]
+
+    n_wav = len(wav_all)
+    if label_list is None:
+        label_list = ['']*n_wav
+
+
+    amp_max_overall = np.max([np.max(np.abs(wav)) for wav in wav_all])
+
+    stft_params = {'frame_len':frame_len,'shift_len':shift_len,'fs':fs}
+    stft_amp_dB_all =  [20*np.log10(np.abs(fft.cal_stft(wav,**stft_params)[0]))
+                                                            for wav in wav_all]
+    stft_amp_max_overall = np.max([np.max(stft_amp_dB)
+                                    for stft_amp_dB in stft_amp_dB_all])
+    stft_amp_min_overall = stft_amp_max_overall-60
+
+    fig,ax = plt.subplots(2,n_wav,figsize=[4*n_wav,6])
+    if fs is None:
+        t_label = 'sample(n)'
+        freq_label = 'normalizeed frequnecy'
+    else:
+        t_label = 'time(s)'
+        freq_label = 'frequnecy(kHz)'
+
+    for wav_i,[wav,wav_name] in enumerate(zip(wav_all,label_list)):
+        n_frame,n_bin = stft_amp_dB_all[wav_i].shape
+        if fs is None:
+            t_tick_wav = np.arange(wav.shape[0])
+            t_tick_stft = np.arange(n_frame)
+            freq_tick = np.arange(n_bin)/n_bin
+        else:
+            t_tick_wav = np.arange(wav.shape[0])/fs
+            t_tick_stft = (np.arange(n_frame)+1)*shift_len/fs
+            freq_tick = np.arange(n_bin)/frame_len*fs
+
+        ax[0,wav_i].plot(t_tick_wav,wav)
+        ax[0,wav_i].set_ylim((-amp_max_overall,amp_max_overall))
+        ax[0,wav_i].set_title(wav_name)
+
+        imshow(ax[1,wav_i],Z=stft_amp_dB_all[wav_i].T,
+                  x=t_tick_stft,y=freq_tick,
+                  vmin=stft_amp_min_overall,vmax=stft_amp_max_overall,
+                  interpolation='nearest',origin='lower')
+
+        ax[1,wav_i].set_xlabel(t_label)
+        if wav_i == 0:
+            ax[1,wav_i].set_ylabel('freq_label')
+
+    plt.tight_layout()
     return fig
 
 
@@ -193,8 +289,21 @@ def test_imshow():
     savefig(fig,name='imshow',dir='images/plot_tools')
 
 
+def test_plot_wav_spec():
+    import wav_tools
+    x1,fs = wav_tools.wav_read('resource/tar.wav')
+    x2,fs = wav_tools.wav_read('resource/inter.wav')
+
+    fig = plot_wav_spec(wav_all=[x1,x2],label_list=['tar','inter'],fs=fs,
+                        frame_len=1024,shift_len=512,yscale='mel')
+    savefig(fig,name='wav_spec',dir='./images/plot_tools')
+
+
 if __name__ == "__main__":
 
-    test_gif()
+    # test_gif()
     # test_bar()
     # test_imshow()
+    # break_plot()
+
+    test_plot_wav_spec()

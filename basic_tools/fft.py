@@ -5,7 +5,8 @@ import numpy as np
 import wav_tools
 import auditory_scale
 
-def cal_stft(x,win_f=np.hanning,frame_len=1024,shift_len=None,is_plot=False,fs=None,freq_scale='erb'):
+def cal_stft(x,win_f=np.hanning,frame_len=1024,shift_len=None,is_plot=False,
+             fs=None,freq_scale='erb'):
     """short-time fast Fourier transform
     Args:
         x: 2d ndarray, [signal_len,n_chann]
@@ -15,6 +16,11 @@ def cal_stft(x,win_f=np.hanning,frame_len=1024,shift_len=None,is_plot=False,fs=N
         is_plot:
         fs: sample frquency
         freq_scale:
+    Returns:
+        stft: stft result with shape of [n_frame,n_bin]
+        t: time of each frame (frame center)
+        freq: frequency of each bins
+
     """
     if shift_len is None:
         shift_len = np.int(frame_len/2)
@@ -23,7 +29,7 @@ def cal_stft(x,win_f=np.hanning,frame_len=1024,shift_len=None,is_plot=False,fs=N
     window = win_f(frame_len)
     frames = np.multiply(frames,window)
     #
-    fft_frames = np.fft.fft(frames)
+    fft_frames = np.fft.fft(frames)/frame_len
     half_frame_len = np.int(np.floor(frame_len/2.0)+1)
     stft = fft_frames[:,:half_frame_len]
     if fs is None:

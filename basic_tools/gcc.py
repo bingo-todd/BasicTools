@@ -7,7 +7,7 @@ from matplotlib import cm
 # from . import import plot_tools
 
 import wav_tools
-import savefig
+import plot_tools
 import plot_tools
 
 
@@ -177,7 +177,7 @@ def test(frame_len=320,max_delay=18):
 
     fig = test_plot(['rect',gcc_phat_rect],
                     ['hanning',gcc_phat_hanning])
-    savefig.savefig(fig,fig_name='diff_window',fig_dir='images/ccf')
+    plot_tools.savefig(fig,fig_name='diff_window',fig_dir='images/ccf')
 
 
 if __name__ == '__main__':
@@ -194,7 +194,7 @@ if __name__ == '__main__':
     ax.plot(ccfs.T)
     ax.set_xlabel('Delay(sample)')
     ax.set_title('ccfs')
-    savefig.savefig(fig,fig_name='ccf',fig_dir='images/ccf')
+    plot_tools.savefig(fig,fig_name='ccf',fig_dir='images/ccf')
 
 
     test_ifclip(wav,frame_len,max_delay)

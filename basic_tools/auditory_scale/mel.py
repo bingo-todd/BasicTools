@@ -1,19 +1,16 @@
 # -*- coding:utf-8 -*-
-# TODO:  not finished
 import numpy as np
-
+import os
+import sys
 from matplotlib import scale as mscale
 from matplotlib import transforms as mtransforms
 from matplotlib import ticker as mticker
 from matplotlib import rcParams
 
-# import .. unit_convert
-# import .. savefig
-
-import sys
-sys.path.append('../')
+workspace_dir = os.path.join(os.path.expanduser('~'),'Work_Space')
+sys.path.append(os.path.join(workspace_dir,'my_module','basic_tools',
+                             'basic_tools'))
 import unit_convert
-import savefig
 
 rcParams['axes.axisbelow'] = False
 
@@ -81,6 +78,7 @@ mscale.register_scale(MelScale)
 
 
 if __name__ == "__main__":
+    import plot_tools
     x = np.arange(100,2000,100)
     y = x
     import matplotlib.pyplot as plt
@@ -89,4 +87,4 @@ if __name__ == "__main__":
     ax.set_yscale('mel')
     ax.set_xlabel('Frequency(hz)')
     ax.set_ylabel('Mel scale')
-    savefig.savefig(fig,fig_name='mel_scale',fig_dir='../images/auditory_scale')
+    plot_tools.savefig(fig,fig_name='mel_scale',fig_dir='../images/auditory_scale')

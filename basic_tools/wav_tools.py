@@ -1,3 +1,18 @@
+import wave
+import os
+import numpy as np
+import scipy.signal as dsp_tools
+import matplotlib.pyplot as plt
+import librosa
+import librosa.display
+import soundfile as sf
+
+import sys
+sys.path.append('/home/st/Work_Space/module_st/basic-toolbox-develop/basic_tools')
+import fft
+import plot_tools
+
+
 def wav_read(fpath,tar_fs=None):
     """ read wav file, implete with soundfile
     """
@@ -299,46 +314,6 @@ def cal_bw(self,cf):
     return 1.019*erb
 
 
-def plot_wav_spec(wav_list,label_list=None,fs=16000,frame_dur=20e-3,
-                  yaxis_type='mel'):
-    """plot spectrogram of given len
-    Args:
-        wav_list: list of numpy 1d arrays
-        label_list: labels of each wav
-        fs: sample frequency
-        frame_dur:
-        yaxis_type: options 'mel'
-    """
-
-    if  isinstance(wav_list,np.ndarray):
-        wav_list = [wav_list]
-
-    n_wav = len(wav_list)
-    if label_list is not None:
-        if isinstance(label_list,str):
-            label_list = [label_list]
-        if len(label_list) is not n_wav:
-            raise Exception('wrong number of label')
-    else:
-        label_list = ['']*n_wav
-
-    fig = plt.figure(figsize=[4*n_wav,6])
-    axes = fig.subplots(2,n_wav)
-    axes = np.reshape(axes,[2,n_wav])
-    frame_len = int(frame_dur*fs)
-    for wav_i,[wav,wav_name] in enumerate(zip(wav_list,label_list)):
-        axes[0,wav_i].plot(np.arange(wav.shape[0])/fs,wav)
-        axes[0,wav_i].set_xlabel('time(s)')
-        axes[0,wav_i].set_title(wav_name)
-
-        stft,t_sample,freq_norm = fft.cal_stft(wav,frame_len=frame_len)
-        stft_amp_dB = 20*np.log10(np.abs(stft))
-        axes[1,wav_i].imshow(stft_amp_dB,interpolation='nearest',aspect='auto',origin='lower')
-
-    plt.tight_layout()
-    return fig
-
-
 def test():
     print('test')
     wav_fpath = 'resource/tar.wav'
@@ -351,9 +326,8 @@ def test():
 
     # wave
     fig = plot_wav_spec(data)
-    savefig.savefig(fig,fig_name='wav_spec',fig_dir='./images/wav_tools')
+    plot_tools.savefig(fig,name='wav_spec',dir='./images/wav_tools')
 
 
-# if __name__ == '__main__':
-#     print('test')
-#     # test()
+if __name__ == '__main__':
+    test()

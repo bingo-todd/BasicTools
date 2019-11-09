@@ -1,21 +1,17 @@
 # -*- coding:utf-8 -*-
-# reference: https://matplotlib.org/3.1.0/gallery/scales/custom_scale.html
-
-
 import numpy as np
+import os
+import sys
 from matplotlib import scale as mscale
 from matplotlib import transforms as mtransforms
 from matplotlib import ticker as mticker
 from matplotlib import rcParams
 
-# local modules
-# from . import unit_convert
-# from . import savefig
-
+workspace_dir = os.path.join(os.path.expanduser('~'),'Work_Space')
+sys.path.append(os.path.join(workspace_dir,'my_module','basic_tools',
+                             'basic_tools'))
 import unit_convert
-import savefig
 
-# from tutorial: BUG: this example fails with any other setting of axisbelow
 rcParams['axes.axisbelow'] = False
 
 class ERBScale(mscale.ScaleBase):
@@ -83,6 +79,7 @@ mscale.register_scale(ERBScale)
 
 
 if __name__ == "__main__":
+    import plot_tools
     x = np.arange(100,2000,100)
     y = x
     import matplotlib.pyplot as plt
@@ -91,4 +88,5 @@ if __name__ == "__main__":
     ax.set_yscale('erb')
     ax.set_xlabel('Frequency(Hz)')
     ax.set_ylabel('ERB scale')
-    savefig.savefig(fig,fig_name='erb_scale',fig_dir='../images/')
+    plot_tools.savefig(fig,fig_name='erb_scale',
+                       fig_dir='../images/auditory_scale')
