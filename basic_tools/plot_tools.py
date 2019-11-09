@@ -128,12 +128,12 @@ def break_plot():
     savefig(fig,'break_axis')
 
 
-def plot_wav_spec(wav_all,label_list=None,fs=None,frame_len=1024,
+def plot_wav_spec(wav_all,label_all=None,fs=None,frame_len=1024,
                   shift_len=512,yscale='mel'):
     """plot spectrogram of given len
     Args:
         wav_all: list of 1-channel signal
-        label_list: labels of each wav
+        label_all: labels of each wav
         fs: sample frequency
         frame_dur:
         yaxis_type: options 'mel'
@@ -146,8 +146,8 @@ def plot_wav_spec(wav_all,label_list=None,fs=None,frame_len=1024,
         wav_all = [wav_all]
 
     n_wav = len(wav_all)
-    if label_list is None:
-        label_list = ['']*n_wav
+    if label_all is None:
+        label_all = ['']*n_wav
 
 
     amp_max_overall = np.max([np.max(np.abs(wav)) for wav in wav_all])
@@ -167,7 +167,7 @@ def plot_wav_spec(wav_all,label_list=None,fs=None,frame_len=1024,
         t_label = 'time(s)'
         freq_label = 'frequnecy(kHz)'
 
-    for wav_i,[wav,wav_name] in enumerate(zip(wav_all,label_list)):
+    for wav_i,[wav,wav_name] in enumerate(zip(wav_all,label_all)):
         n_frame,n_bin = stft_amp_dB_all[wav_i].shape
         if fs is None:
             t_tick_wav = np.arange(wav.shape[0])
@@ -294,7 +294,7 @@ def test_plot_wav_spec():
     x1,fs = wav_tools.wav_read('resource/tar.wav')
     x2,fs = wav_tools.wav_read('resource/inter.wav')
 
-    fig = plot_wav_spec(wav_all=[x1,x2],label_list=['tar','inter'],fs=fs,
+    fig = plot_wav_spec(wav_all=[x1,x2],label_all=['tar','inter'],fs=fs,
                         frame_len=1024,shift_len=512,yscale='mel')
     savefig(fig,name='wav_spec',dir='./images/plot_tools')
 
