@@ -14,10 +14,14 @@ from functools import wraps
 def line_collector(plot_func):
     @wraps(plot_func)
     def wrapped_plot_func(ax,*args,line_container=None,**kwargs):
-        lines = plot_func(ax,*args,**kwargs)
+        result = plot_func(ax,*args,**kwargs)
         if line_container is not None:
-            line_container.extend(lines)
-        return lines
+            if plot_func.__name__ == 'plot_contour':
+                line_container.extend(result.collections)
+                line_container.extend(ax.clabel(result,inline=True))
+            else:
+                line_container.extend(result)
+        return result
     return wrapped_plot_func
 
 
@@ -26,15 +30,28 @@ def plot_line(ax,*args,line_container=None,**kwargs):
     return ax.plot(*args,**kwargs)
 
 
+def plot_line2(ax,y1,y2,x1=None,x2=None,**kwargs):
+    ax_twin = ax.twinx()
+    if x1 is None:
+        x1 = np.arange(y1.shape[0])
+    ax.plot(x1,y1,**kwargs)
+
+    if x2 is None:
+        x2 = np.arange(y2.shape[0])
+    ax_twin.plot(x1,y1,**kwargs)
+
+
+
+
 # @line_collector
 # def plot_scatter(ax,*args,line_container=None,**kwargs):
 #     return ax.scatter(*args,**kwargs)
 
 
 @line_collector
-def plot_contour(ax,*args,line_container=None,**kwargs):
+def plot_contour(ax,*args,is_label=False,line_container=None,**kwargs):
     contour_set = ax.contour(*args,**kwargs)
-    return contour_set.collections
+    return contour_set
 
 def imshow(ax,Z,x=None,y=None,vmin=None,vmax=None,**kwargs):
     if x is None or y is None:
@@ -189,7 +206,7 @@ def plot_wav_spec(wav_all,label_all=None,fs=None,frame_len=1024,
 
         ax[1,wav_i].set_xlabel(t_label)
         if wav_i == 0:
-            ax[1,wav_i].set_ylabel('freq_label')
+            ax[1,wav_i].set_ylabel(freq_label)
 
     plt.tight_layout()
     return fig
@@ -299,11 +316,18 @@ def test_plot_wav_spec():
     savefig(fig,name='wav_spec',dir='./images/plot_tools')
 
 
+def test_plot_line2():
+    y1 = np.random.rand(10)
+    y2 = np.random.rand(10)+10
+    fig,ax = plt.subplots(1,1)
+    plot_line2(ax,y1,y2)
+    savefig(fig,name='plot_line2',dir='images/plot_tools')
+
 if __name__ == "__main__":
 
     # test_gif()
     # test_bar()
     # test_imshow()
     # break_plot()
-
-    test_plot_wav_spec()
+    # test_plot_wav_spec()
+    test_plot_line2()
