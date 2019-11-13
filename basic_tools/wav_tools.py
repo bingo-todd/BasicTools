@@ -139,7 +139,7 @@ def set_snr(x,ref,snr):
     power_ref = cal_power(ref)
     coef = np.sqrt(np.float_power(10,float(snr)/10)/\
                                 (power_x/power_ref))
-    return x*coef
+    return coef*x.copy()
 
 
 def _cal_snr(tar,inter):
@@ -201,17 +201,26 @@ def cal_snr(tar,inter,frame_len=None,overlap=None,is_plot=None):
     return snr
 
 
-def gen_whitenoise(n_sample,power=1):
-    """Generate Gaussian white noise
+def gen_wn(shape,ref=None,energy_ratio=0,power=1):
+    """Generate Gaussian white noise with either given energy ration related
+    to ref signal or given power
     Args:
-        n_sample
-        power
+        shape: the shape of white noise to be generated,
+        ref: reference signal
+        energy_ratio: energy ration(dB) between white noise and reference signal,
+            default to 0 dB
+        power:
     Returns:
         white noise
     """
-    wn = np.random.normal(0,1,size=n_sample)
-    coef = np.sqrt(power/(np.sum(wn**2/n_sample)))
-    return wn*coef
+    wn = np.random.normal(0,1,size=shape)
+    if ref is not None:
+        wn = set_snr(wn,ref,energy_ratio)
+    else:
+        power_orin = np.sum(wn**2,axis=0)/n_sample
+        coef = np.sqrt(power/power_orin)
+        wn = wn*coef
+    return wn
 
 
 def vad(x,fs,frame_len,overlap=None,theta=40,is_plot=False):

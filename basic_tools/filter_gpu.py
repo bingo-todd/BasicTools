@@ -36,6 +36,14 @@ class filter_gpu:
         return np.squeeze(y)
 
 
+    def brir_filter(self,x,brir):
+        if brir is None:
+            return x.copy()
+        y_l = self.filter(x,brir[:,0])
+        y_r = self.filter(x,brir[:,1])
+        return np.asarray((y_l,y_r)).T
+
+
 if __name__ == '__main__':
     import scipy.signal as dsp
     import matplotlib.pyplot as plt
