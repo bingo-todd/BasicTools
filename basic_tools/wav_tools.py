@@ -101,12 +101,12 @@ def cal_power(x):
     return power
 
 
-def frame_data(x,frame_len,overlap):
+def frame_data(x,frame_len,shift_len):
     """parse data into frames
     Args:
         x: single/multiple channel data
         frame_len: frame length in sample
-        overlap: overlap in sample
+        shift_len: shift_len in sample
     Returns:
         [n_frame,frame_len,n_chann]
     """
@@ -118,10 +118,10 @@ def frame_data(x,frame_len,overlap):
         x = x[:,np.newaxis]
 
     n_sample,n_chann = x.shape
-    n_frame = np.int(np.floor(np.float32(n_sample-frame_len)/overlap)+1)
+    n_frame = np.int(np.floor(np.float32(n_sample-frame_len)/shift_len)+1)
     frames = np.zeros((n_frame,frame_len,n_chann))
     for frame_i in range(n_frame):
-        frame_slice = slice(frame_i*overlap,frame_i*overlap+frame_len)
+        frame_slice = slice(frame_i*shift_len,frame_i*shift_len+frame_len)
         frames[frame_i] = x[frame_slice]
     return np.squeeze(frames)
 
@@ -149,7 +149,7 @@ def _cal_snr(tar,inter):
     snr = 10*np.log10(power_tar/power_inter)
 
 
-def cal_snr(tar,inter,frame_len=None,overlap=None,is_plot=None):
+def cal_snr(tar,inter,frame_len=None,shift_len=None,is_plot=None):
     """Calculate snr of entire signal, frames if frame_len is
     specified.
                 snr = 10log10(power_tar/power_inter)
@@ -157,7 +157,7 @@ def cal_snr(tar,inter,frame_len=None,overlap=None,is_plot=None):
         tar: target signal, single channel
         inter: interfere signal, single channel
         frame_len:
-        overlap: if not specified, set to frame_len/2
+        shift_len: if not specified, set to frame_len/2
         if_plot: whether to plot snr of each frames, default to None
     Returns:
         float number or numpy.ndarray
@@ -165,8 +165,8 @@ def cal_snr(tar,inter,frame_len=None,overlap=None,is_plot=None):
     if frame_len is None:
         snr=_cal_snr(tar,inter)
     else:
-        if overlap is None:
-            overlap = np.int16(frame_len/2)
+        if shift_len is None:
+            shift_len = np.int16(frame_len/2)
 
         # signal length check
         if tar.shape[0] != inter.shape[0]:
@@ -174,8 +174,8 @@ def cal_snr(tar,inter,frame_len=None,overlap=None,is_plot=None):
                              tar:{}, inter:{}'.format(tar.shape[0],
                                                       inter.shape[0]))
 
-        frames_tar = frame_data(tar,frame_len,overlap)
-        frames_inter = frame_data(inter,frame_len,overlap)
+        frames_tar = frame_data(tar,frame_len,shift_len)
+        frames_inter = frame_data(inter,frame_len,shift_len)
         n_frame = frames_tar.shape[0]
         snr = np.asarray([_cal_snr(frames_tar[i],frames_inter[i])
                                                 for i in range(n_frame)])
@@ -194,7 +194,7 @@ def cal_snr(tar,inter,frame_len=None,overlap=None,is_plot=None):
             ax2 = ax1.twinx()
             axe2.set_ylabel('snr(dB)')
             # time: center of frame
-            t_frames = np.arange(n_frame)*overlap+np.int16(frame_len/2)
+            t_frames = np.arange(n_frame)*shift_len+np.int16(frame_len/2)
             ax2.plot(t_frames,snrs,color='red',linewidth=2,label='snr')
             ax2.legend(loc='upper right')
             plt.tight_layout()
@@ -223,30 +223,30 @@ def gen_wn(shape,ref=None,energy_ratio=0,power=1):
     return wn
 
 
-def vad(x,fs,frame_len,overlap=None,theta=40,is_plot=False):
+def vad(x,frame_len,shift_len=None,theta=40,is_plot=False):
     """ Energy based vad.
-        1. Frame data with overlap of 0
+        1. Frame data with shift_len of 0
         2. Calculte the energy of each frame
         3. Frames with energy below max_energy-theta is regarded as silent frames
     Args:
         x: single channel signal
         frame_len: frame length
-        overlap: frames shift length in time
+        shift_len: frames shift length in time
         theta: the maximal energy difference between frames, default 40dB
         is_plot: whether to ploting vad result, default False
     Returns:
         vad_labels, as well as figures of vad_labesl if is_plot is ture
     """
-    if overlap is None:
-        overlap = frame_len
+    if shift_len is None:
+        shift_len = frame_len
 
-    frames = frame_data(x,frame_len,overlap)
+    frames = frame_data(x,frame_len,shift_len)
     energy_frames = np.sum(frames**2,axis=1)
     energy_thd = np.max(energy_frames)/(10**(theta/10.0))
     vad_labels = np.greater(energy_frames,energy_thd)
 
-    if is_plot and (frame_len==overlap):
-        # if dpi is low, speech line and silence line will be overlapped
+    if is_plot and (frame_len==shift_len):
+        # if dpi is low, speech line and silence line will be shift_lenped
         fig = plt.figure(dpi=500)
         ax = fig.subplots(1,1)
         line_speech = None
@@ -254,7 +254,7 @@ def vad(x,fs,frame_len,overlap=None,theta=40,is_plot=False):
         n_frame = frames.shape[0]
         for frame_i in range(n_frame):
             frame = frames[frame_i]
-            start_pos = frame_i*overlap
+            start_pos = frame_i*shift_len
             end_pos = start_pos+frame_len
             if vad_labels[frame_i] == True:
                 [line_speech] = ax.plot(np.arange(start_pos,end_pos),frame,
