@@ -1,7 +1,7 @@
 import tensorflow as tf
 import numpy as np
 
-class filter_gpu:
+class Filter_GPU:
     def __init__(self,gpu_index):
         self._graph = tf.Graph()
         config = tf.compat.v1.ConfigProto()
