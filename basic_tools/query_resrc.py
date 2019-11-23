@@ -1,7 +1,9 @@
+import sys
 import subprocess
 import numpy as np
 import re
-def query_resrc(is_print=False):
+
+def check_cpu(is_print=False):
     BASE = 1024
 
     # top -bn1
@@ -25,7 +27,7 @@ def query_resrc(is_print=False):
     return [cpu_ratio,mem_ratio]
 
 
-def gpu_check():
+def check_gpu():
     cmd_line = ['nvidia-smi']
     info = subprocess.run(cmd_line,check=True,stdout=subprocess.PIPE).stdout.decode('utf8');
     # print(info)
@@ -74,4 +76,10 @@ def gpu_check():
 
 if __name__ == '__main__':
     # query_resrc(is_print=True)
-    gpu_check()
+    # gpu_check()
+    device_name = sys.argv[1]
+    if device_name == 'gpu':
+        check_gpu()
+    elif device_name == 'cpu':
+        cpu_usage,mem_usage = check_cpu()
+        print('cpu:{:2.2f}% mem:{:2.2f}%'.format(cpu_usage,mem_usage))
