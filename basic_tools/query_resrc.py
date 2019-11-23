@@ -77,6 +77,9 @@ def check_gpu():
 if __name__ == '__main__':
     # query_resrc(is_print=True)
     # gpu_check()
-    device_name = sys.argvs[1]
-    func_all = {'cpu':check_cpu,'gpu':check_gpu}
-    func_all[device_name]()
+    device_name = sys.argv[1]
+    if device_name == 'gpu':
+        check_gpu()
+    elif device_name == 'cpu':
+        cpu_usage,mem_usage = check_cpu()
+        print('cpu:{:2.2f}% mem:{:2.2f}%'.format(cpu_usage,mem_usage))
