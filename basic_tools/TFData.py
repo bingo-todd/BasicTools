@@ -109,6 +109,11 @@ class TFData(object):
                 self.coord.request_stop()
 
             for var_list in var_list_generator:
+                # check size
+                n_sample_all = [item.shape[0] for item in var_list]
+                if np.min(n_sample_all) != np.max(n_sample_all):
+                    raise Exception('var shape miss match')
+
                 if self.coord.should_stop(): # train finish, terminate file read
                     stop = True
                     break
@@ -128,6 +133,7 @@ class TFData(object):
         self.is_repeat = is_repeat
         self.file_dir = file_dir
         for _ in np.arange(n_thread):
+            self._empty_queue()
             thread = threading.Thread(target=self._reader_main)
             thread.daemon = True #
             thread.start()
