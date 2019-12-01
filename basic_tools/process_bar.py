@@ -20,11 +20,19 @@ class process_bar(object):
     def get_cur_value(self):
         print(self.value)
 
+
+    def is_finish(self):
+        return self.value >= self.max_value
+
+
     def update(self,value=None):
         if value == None:
             self.value = self.value + 1
         else:
-            self.value = np.mod(value,self.max_value)
+            if value >= self.max_value:
+                self.value = self.max_value
+            else:
+                self.value = np.mod(value,self.max_value)
 
         p = np.float32(self.value)/self.max_value
         # finish_symbol = '>'
