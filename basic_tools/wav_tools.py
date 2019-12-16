@@ -235,15 +235,15 @@ def vad(x,frame_len,shift_len=None,theta=40,is_plot=False):
         theta: the maximal energy difference between frames, default 40dB
         is_plot: whether to ploting vad result, default False
     Returns:
-        vad_labels, as well as figures of vad_labesl if is_plot is ture
+        vad_flag_all, as well as figures of vad_labesl if is_plot is ture
     """
     if shift_len is None:
         shift_len = frame_len
 
     frames = frame_data(x,frame_len,shift_len)
-    energy_frames = np.sum(frames**2,axis=1)
-    energy_thd = np.max(energy_frames)/(10**(theta/10.0))
-    vad_labels = np.greater(energy_frames,energy_thd)
+    energy_frame_all = np.sum(frames**2,axis=1)
+    energy_thd = np.max(energy_frame_all)/(10**(theta/10.0))
+    vad_flag_all = np.greater(energy_frame_all,energy_thd)
 
     if is_plot and (frame_len==shift_len):
         # if dpi is low, speech line and silence line will be shift_lenped
@@ -256,7 +256,7 @@ def vad(x,frame_len,shift_len=None,theta=40,is_plot=False):
             frame = frames[frame_i]
             start_pos = frame_i*shift_len
             end_pos = start_pos+frame_len
-            if vad_labels[frame_i] == True:
+            if vad_flag_all[frame_i] == True:
                 [line_speech] = ax.plot(np.arange(start_pos,end_pos),frame,
                                         linewidth=1,color='red')
             else:
@@ -271,9 +271,9 @@ def vad(x,frame_len,shift_len=None,theta=40,is_plot=False):
         ax.set_xlabel('time(s)')
         ax.set_ylabel('amp')
         ax.set_title('threshold={}dB'.format(theta))
-        return [vad_labels,fig]
+        return [vad_flag_all,fig]
     else:
-        return vad_labels
+        return vad_flag_all
 
 
 def truncate_data(x,type="both",eps=1e-5):
@@ -330,7 +330,7 @@ def test():
     data,fs = wav_read(wav_fpath)
 
     # vad
-    # vad_labels,fig = vad(data,fs,frame_dur=20e-3,is_plot=True,theta=20)
+    # vad_flag_all,fig = vad(data,fs,frame_dur=20e-3,is_plot=True,theta=20)
     # savefig.savefig(fig,fig_name='vad',fig_dir='./images/wav_tools')
 
     # wave
