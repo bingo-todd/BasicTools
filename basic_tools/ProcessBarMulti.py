@@ -6,7 +6,7 @@ from multiprocessing import Process, Manager,Lock
 from multiprocessing.managers import BaseManager
 
 
-class ProcessBarMulti(object):
+class ProcessBarMulti_base(object):
     def __init__(self,max_value_all,token_all=None,desc_all=None,
                  is_show_resrc=False,is_show_time=False):
         """show process bar of multiple tasks
@@ -131,9 +131,10 @@ class ProcessBarMulti(object):
             self.update(value=0)
 
 #
-BaseManager.register('ProcessBarMulti',ProcessBarMulti)
+BaseManager.register('ProcessBarMulti_base',ProcessBarMulti_base)
 manager = BaseManager()
 manager.start()
+ProcessBarMulti = manager.ProcessBarMulti_base
 
 
 def test_process_bar_multi():
@@ -147,7 +148,7 @@ def test_process_bar_multi():
     n_task = 3
     process_all = []
     max_value_all = [200,100,50]
-    pb_share = manager.ProcessBarMulti(max_value_all[:n_task])
+    pb_share = ProcessBarMulti(max_value_all[:n_task])
     lock = Lock()
     for task_i in range(n_task):
         process = Process(target=count_up,args=(pb_share,str(task_i),
