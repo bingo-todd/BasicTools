@@ -147,6 +147,7 @@ def _cal_snr(tar,inter):
     power_tar = cal_power(tar)
     power_inter = cal_power(inter)
     snr = 10*np.log10(power_tar/power_inter)
+    return snr
 
 
 def cal_snr(tar,inter,frame_len=None,shift_len=None,is_plot=None):
@@ -174,10 +175,10 @@ def cal_snr(tar,inter,frame_len=None,shift_len=None,is_plot=None):
                              tar:{}, inter:{}'.format(tar.shape[0],
                                                       inter.shape[0]))
 
-        frames_tar = frame_data(tar,frame_len,shift_len)
-        frames_inter = frame_data(inter,frame_len,shift_len)
-        n_frame = frames_tar.shape[0]
-        snr = np.asarray([_cal_snr(frames_tar[i],frames_inter[i])
+        frame_all_tar = frame_data(tar,frame_len,shift_len)
+        frame_all_inter = frame_data(inter,frame_len,shift_len)
+        n_frame = frame_all_tar.shape[0]
+        snr = np.asarray([_cal_snr(frame_all_tar[i],frame_all_inter[i])
                                                 for i in range(n_frame)])
         if is_plot:
             n_sample = tar.shape[0]

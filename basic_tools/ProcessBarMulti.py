@@ -105,7 +105,7 @@ class ProcessBarMulti_base(object):
 
         with self._lock:
             if token not in self.token_all:
-                raise Exception('Unknown token')
+                raise Exception(f'{token} not in possible tokens {self.token_all}')
 
             bar = self.bar_all[token]
             if value == None:

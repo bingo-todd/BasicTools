@@ -14,7 +14,9 @@ def get_fpath(dir,suffix,pattern=None,is_exclude=False,is_absolute=False):
             if not file_filter(fname):
                 continue
 
+            fpath_absolute = os.path.join(root,fname)
             fpath_relative = os.path.relpath(fpath_absolute,dir)
+
             if pattern is not None:
                 n_match = len(re.findall(pattern,fpath_relative))
                 if is_exclude and n_match>0:
@@ -24,9 +26,9 @@ def get_fpath(dir,suffix,pattern=None,is_exclude=False,is_absolute=False):
             fpath_relative_all.append(fpath_relative)
 
     if is_absolute:
-        fpath_absolute = [os.path.join(dir,fpath_relative)
-                             for fpath_relative in fpath_relative_all]
-        return fpath_absolute
+        fpath_absolute_all = [os.path.join(dir,fpath_relative)
+                               for fpath_relative in fpath_relative_all]
+        return fpath_absolute_all
     else:
         return fpath_relative_all
 

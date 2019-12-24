@@ -42,12 +42,12 @@ def _cal_gcc_phat(x1,x2,max_delay,win_f,snr_thd):
     return gcc_phat
 
 
-def cal_gcc_phat(x1,x2,win_f=np.ones,max_delay=None,
+def cal_gcc_phat(x1,x2,win_f=np.hanning,max_delay=None,
                  frame_len=None,shift_len=None,snr_thd=-50):
     """Calculate general corss-correlation phase-transform
     Args:
         x1,x2: single-channel data
-        win_f: window function
+        win_f: window function, default to hanning
         max_delay: maximal delay in sample of ccf, if not specified, it will
                      be set to signale length. The relation between max_delay
                      and gcc_len: gcc_len=2*max_delay+1
