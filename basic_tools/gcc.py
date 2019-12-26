@@ -94,8 +94,7 @@ def _cal_ccf(x1,x2,max_delay,win_f):
     ccf_len = 2*n_sample-1
     x1_fft = np.fft.fft(np.multiply(x1,window),ccf_len)# equivalent to add zeros
     x2_fft = np.fft.fft(np.multiply(x2,window),ccf_len)
-    ccf_unshift = np.real(np.fft.ifft(np.multiply(x1_fft,
-                                                  np.conjugate(x2_fft))))
+    ccf_unshift = np.real(np.fft.ifft(np.multiply(x1_fft,np.conjugate(x2_fft))))
     ccf = np.concatenate([ccf_unshift[-max_delay:],
                           ccf_unshift[:max_delay+1]],
                          axis=0)
@@ -177,25 +176,45 @@ def test(frame_len=320,max_delay=18):
 
     fig = test_plot(['rect',gcc_phat_rect],
                     ['hanning',gcc_phat_hanning])
-    plot_tools.savefig(fig,fig_name='diff_window',fig_dir='images/ccf')
+    plot_tools.savefig(fig,name='diff_window',dir='images/ccf')
+
+
+def test_ccf():
+    x = np.random.normal(0,1,size=2048)
+    # frame_len = 320
+    # shift_len = 160
+    x_len = x.shape[0]
+    ccf_fft = cal_ccf(x,x,max_delay=44)
+    print(ccf_fft.shape)
+    ccf_ref = np.correlate(x,x,mode='full')[x_len-1-44:x_len+44]
+    print(ccf_ref.shape)
+
+    fig,ax = plt.subplots(1,1)
+    ax.plot(ccf_fft,label='ccf_fft')
+    print(np.argmax(ccf_fft))
+
+    ax.plot(ccf_ref,label='ccf_ref')
+    print(np.argmax(ccf_ref))
+
+    ax.legend()
+    plt.show()
+    plot_tools.savefig(fig,name='ccf_compare.png',dir='../images/ccf')
 
 
 if __name__ == '__main__':
-    wav_path = 'resource/binaural_pos4.wav'
-    frame_dur = 20e-3
-    max_delay = 18
+    # wav_path = 'resource/binaural_pos4.wav'
+    # frame_dur = 20e-3
+    # max_delay = 18
+    #
+    # wav,fs = wav_tools.wav_read(wav_path)
+    # frame_len = np.int16(frame_dur*fs)
+    #
+    # ccfs = cal_ccf(wav[:,0],wav[:,1],frame_len=frame_len,
+    #                max_delay=max_delay,win_f=np.hanning)
+    # fig,ax = plt.subplots(1,1)
+    # ax.plot(ccfs.T)
+    # ax.set_xlabel('Delay(sample)')
+    # ax.set_title('ccfs')
+    # plot_tools.savefig(fig,fig_name='ccf',fig_dir='images/ccf')
 
-    wav,fs = wav_tools.wav_read(wav_path)
-    frame_len = np.int16(frame_dur*fs)
-
-    ccfs = cal_ccf(wav[:,0],wav[:,1],frame_len=frame_len,
-                   max_delay=max_delay,win_f=np.hanning)
-    fig,ax = plt.subplots(1,1)
-    ax.plot(ccfs.T)
-    ax.set_xlabel('Delay(sample)')
-    ax.set_title('ccfs')
-    plot_tools.savefig(fig,fig_name='ccf',fig_dir='images/ccf')
-
-
-    test_ifclip(wav,frame_len,max_delay)
-    test_win_f(wav,frame_len,max_delay)
+    test_ccf()

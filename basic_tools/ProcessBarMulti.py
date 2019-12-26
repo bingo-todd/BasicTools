@@ -95,13 +95,16 @@ class ProcessBarMulti_base(object):
         print('\n'.join(bar_status_str_all))
 
 
-    def update(self,token,value=None):
+    def update(self,token=None,value=None):
         """Update process bar of given token
         Args:
             token: token to specify process bar
             value: assign value to process bar directly
         """
         # with self._lock:
+
+        if token is None:
+            token = self.token_all[0]
 
         with self._lock:
             if token not in self.token_all:

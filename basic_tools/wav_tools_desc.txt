@@ -1,0 +1,128 @@
+
+|wav_tools
+|   (no doc)
+|   
+|---_cal_snr(tar,inter)
+|      sub-function of cal_snr
+|      
+|---brir_filter(x,brir)
+|      synthesize spatial recording
+|      Args:
+|      x: single-channel signal
+|      brir: binaural room impulse response
+|      Returns:
+|      spatialized signal
+|      
+|---cal_bw(self,cf)
+|      calculate the 3-dB bandwidth
+|      Args
+|      cf: center frequency Hz, single value or numpy array
+|      
+|---cal_erb(self,cf)
+|      calculate the ERB(Hz) of given center frequency based on equation
+|      given by Glasberg and Moore
+|      Args
+|      cf: center frequency Hz, single value or numpy array
+|      
+|---cal_power(x)
+|      calculate the engergy of given signal
+|      
+|---cal_snr(tar,inter,frame_len=None,shift_len=None,is_plot=None)
+|      Calculate snr of entire signal, frames if frame_len is
+|      specified.
+|      snr = 10log10(power_tar/power_inter)
+|      Args:
+|      tar: target signal, single channel
+|      inter: interfere signal, single channel
+|      frame_len:
+|      shift_len: if not specified, set to frame_len/2
+|      if_plot: whether to plot snr of each frames, default to None
+|      Returns:
+|      float number or numpy.ndarray
+|      
+|---erbscal2hz(self,erb_num)
+|      convert ERB scale to Hz
+|      
+|---fft
+|      (no doc)
+|      infor not expanded
+|      
+|---frame_data(x,frame_len,shift_len)
+|      parse data into frames
+|      Args:
+|      x: single/multiple channel data
+|      frame_len: frame length in sample
+|      shift_len: shift_len in sample
+|      Returns:
+|      [n_frame,frame_len,n_chann]
+|      
+|---gen_wn(shape,ref=None,energy_ratio=0,power=1)
+|      Generate Gaussian white noise with either given energy ration related
+|      to ref signal or given power
+|      Args:
+|      shape: the shape of white noise to be generated,
+|      ref: reference signal
+|      energy_ratio: energy ration(dB) between white noise and reference signal,
+|      default to 0 dB
+|      power:
+|      Returns:
+|      white noise
+|      
+|---hz2erbscal(self,freq)
+|      convert Hz to ERB scale
+|      
+|---plot_tools
+|      (no doc)
+|      infor not expanded
+|      
+|---resample(x,orig_fs,tar_fs)
+|      resample signal, implete with librosa
+|      Args:
+|      x: signal, resampling in the first dimension
+|      orig_fs: original sample frequency
+|      tar_fs: target sample frequency
+|      Returns:
+|      resampled data
+|      
+|---set_snr(x,ref,snr)
+|      scale signal to a certain snr relative to ref
+|      Args:
+|      x: signal to be scaled
+|      ref: reference signal
+|      snr:
+|      Returns:
+|      scaled target signal
+|      
+|---test()
+|      (no doc)
+|      
+|---truncate_data(x,type=both,eps=1e-05)
+|      truncate small-value sample in the first dimension
+|      Args:
+|      x: data to be truncated
+|      type: specify parts to be cliped, options: begin,end,both(default)
+|      eps: amplitude threshold
+|      Returns:
+|      data truncated
+|      
+|---vad(x,frame_len,shift_len=None,theta=40,is_plot=False)
+|      Energy based vad.
+|      1. Frame data with shift_len of 0
+|      2. Calculte the energy of each frame
+|      3. Frames with energy below max_energy-theta is regarded as silent frames
+|      Args:
+|      x: single channel signal
+|      frame_len: frame length
+|      shift_len: frames shift length in time
+|      theta: the maximal energy difference between frames, default 40dB
+|      is_plot: whether to ploting vad result, default False
+|      Returns:
+|      vad_flag_all, as well as figures of vad_labesl if is_plot is ture
+|      
+|---wav_read(fpath,tar_fs=None)
+|      read wav file, implete with soundfile
+|      
+|---wav_write(x,fs,fpath)
+|      write wav file,  implete with soundfile
+|      
+|   

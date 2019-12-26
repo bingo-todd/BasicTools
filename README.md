@@ -82,7 +82,48 @@ basic_tools
 ## wav_tools
 
   Functions related to signal process
+  ```
+wav_tools
+|
+|---brir_filter(x,brir)
+|
+|---cal_bw(self,cf)
+|
+|---cal_erb(self,cf)
+|
+|---cal_power(x)
+|
+|---cal_snr(tar,inter,frame_len=None,shift_len=None,is_plot=None)
+|
+|---erbscal2hz(self,erb_num)
+|
+|---frame_data(x,frame_len,shift_len)
+|
+|---gen_wn(shape,ref=None,energy_ratio=0,power=1)
+|
+|---hz2erbscal(self,freq)
+|
+|---plot_tools
+|
+|---resample(x,orig_fs,tar_fs)
+|
+|---set_snr(x,ref,snr)
+|
+|---test()
+|
+|---truncate_data(x,type=both,eps=1e-05)
+|
+|---vad(x,frame_len,shift_len=None,theta=40,is_plot=False)
+|
+|---wav_read(fpath,tar_fs=None)
+|
+|---wav_write(x,fs,fpath)
+```
 
-  Structure of wav_tools derived by `show_struct`
-  ```
-  ```
+## Filter_GPU
+  A tensorflow implementation of FIR filter, contraining 2 functions, `filter`, `brir_filter`
+
+  Comparation to filter implementation based on `scipy`(marked as 'cpu'), time consumings are given in title.
+
+  <img src='images/Filter_GPU/filter_cpu_gpu_diff.png' width=45%>
+  <img src='images/Filter_GPU/brir_filter_cpu_gpu_diff.png' width=45%>

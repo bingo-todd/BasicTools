@@ -9,7 +9,6 @@ import soundfile as sf
 
 import sys
 sys.path.append('/home/st/Work_Space/module_st/basic-toolbox-develop/basic_tools')
-import fft
 import plot_tools
 
 
@@ -68,7 +67,7 @@ def resample(x,orig_fs,tar_fs):
     return x_result.T
 
 
-def brir_filter(x,brir,is_gpu=False,gpu_index=0):
+def brir_filter(x,brir):
     """ synthesize spatial recording
     Args:
         x: single-channel signal
@@ -80,15 +79,9 @@ def brir_filter(x,brir,is_gpu=False,gpu_index=0):
         raise Exception('x has mutliple channels')
     signal_len = x.shape[0]
     y = np.zeros((signal_len,2),dtype=np.float64)
-    if is_gpu:
-        import filter_gpu
-        filter_gpu_obj = filter_gpu.filter_gpu(gpu_index=gpu_index)
-        for channel_i in range(2):
-            y[:,channel_i] = filter_gpu_obj.filter(x=x,coef=brir[:,channel_i])
-    else:
-        for channel_i in range(2):
-            y[:,channel_i] = np.squeeze(dsp_tools.lfilter(brir[:,channel_i],1,
-                                                          x,axis=0))
+    for channel_i in range(2):
+        y[:,channel_i] = np.squeeze(dsp_tools.lfilter(brir[:,channel_i],1,
+                                                      x,axis=0))
     return y
 
 
