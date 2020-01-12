@@ -1,14 +1,14 @@
 import tensorflow as tf
 import numpy as np
-import os
-import pickle
 import threading
 import time
+
 
 class TFData(object):
     """data read pipeline
     """
-    def __init__(self,*var_shape,sess,batch_size,n_batch_queue,coord,file_reader=None):
+    def __init__(self, *var_shape, sess, batch_size, n_batch_queue, coord,
+                 file_reader=None, file_reader_params=None):
         """
         pipeline for feeding data to neural network
         Inputs:
@@ -29,11 +29,12 @@ class TFData(object):
         enqueue_op_list = []
 
         for i in range(n_var):
-            var = tf.compat.v1.placeholder(dtype=tf.float32,shape=var_shape[i])
+            var = tf.compat.v1.placeholder(dtype=tf.float32,
+                                           shape=var_shape[i])
         # data queue
             queue = tf.queue.FIFOQueue(capacity=batch_size*n_batch_queue,
-                                         dtypes=tf.float32,
-                                         shapes=tf.TensorShape(var_shape[i][1:]))
+                                       dtypes=tf.float32,
+                                       shapes=tf.TensorShape(var_shape[i][1:]))
             queue_size = queue.size()
             enqueue_op = queue.enqueue_many([var])
 
@@ -42,12 +43,14 @@ class TFData(object):
             queue_size_list.append(queue_size)
             enqueue_op_list.append(enqueue_op)
 
-        if file_reader == None:
+        if file_reader is None:
             self._file_reader = self._file_reader
         else:
             self._file_reader = file_reader
+        self._file_reader_params = file_reader_params
 
-        var_batch = [queue_list[i].dequeue_many(batch_size) for i in range(n_var)]
+        var_batch = [queue_list[i].dequeue_many(batch_size)
+                     for i in range(n_var)]
 
         #
         self.coord = coord
@@ -63,15 +66,15 @@ class TFData(object):
 
         self._sess = sess
         self.threads = []
-        self.is_epoch_finish = False # sign, indicate whether all files
-                                     # have been read, 1 epoch
+
+        # sign, indicate whether all files have been read, 1 epoch
+        self.is_epoch_finish = False
 
     def query_if_finish(self):
         if not self._query_if_ready() and self.is_epoch_finish:
             return True
         else:
             return False
-
 
     def _query_if_ready(self):
         queue_size_list = self._sess.run(self.queue_size_list)
@@ -80,31 +83,32 @@ class TFData(object):
         else:
             return False
 
-
     def _empty_queue(self):
         """"""
         for i in range(self.n_var):
             queue_size = self.queue_list[i].size()
             self._sess.run(self.queue_list[i].dequeue_many(queue_size))
 
-
-    def _file_reader(self,file_dir):
+    def _file_reader(self, file_dir):
         """wirte your file_read function and pass to TFData
         """
         raise NotImplementedError()
-
 
     def _reader_main(self):
         """"""
         stop = False
         while not stop:
             # loop until main prosess finish
-            if self.coord.should_stop(): # train finish, terminate file read
+            if self.coord.should_stop():  # train finish, terminate file read
                     stop = True
                     break
             try:
-                var_list_generator = self._file_reader(self.file_dir)
-            except:
+                if self._file_reader_params is None:
+                    var_list_generator = self._file_reader(self.file_dir)
+                else:
+                    var_list_generator = self._file_reader(
+                        self.file_dir, *self._file_reader_params)
+            except Exception:
                 stop = True
                 self.coord.request_stop()
 
@@ -114,13 +118,13 @@ class TFData(object):
                 if np.min(n_sample_all) != np.max(n_sample_all):
                     raise Exception('var shape miss match')
 
-                if self.coord.should_stop(): # train finish, terminate file read
+                if self.coord.should_stop():
                     stop = True
                     break
                 else:
                     for i in range(self.n_var):
                         self._sess.run(self._enqueue_op_list[i],
-                                 feed_dict={self._var_list[i]:var_list[i]})
+                                       feed_dict={self._var_list[i]:var_list[i]})
 
             if not self.is_repeat:
                 self.file_dir=None

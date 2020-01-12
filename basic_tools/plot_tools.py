@@ -166,7 +166,6 @@ def plot_wav_spec(wav_all,label_all=None,fs=None,frame_len=1024,
     if label_all is None:
         label_all = ['']*n_wav
 
-
     amp_max_overall = np.max([np.max(np.abs(wav)) for wav in wav_all])
 
     stft_params = {'frame_len':frame_len,'shift_len':shift_len,'fs':fs}
@@ -212,6 +211,48 @@ def plot_wav_spec(wav_all,label_all=None,fs=None,frame_len=1024,
     return fig
 
 
+def plot_break_axis(x1,x2):
+    # how big to make the diagonal lines in axes coordinates
+    d = .015
+
+    ax = plt.subplots(2,1,sharex=True)
+    [x1_min,x1_max] = [np.min(x1), np.max(x1)]
+    if x1_min == x1_max:
+        tmp = x1_max/10.
+    else:
+        tmp = (x1_max-x1_min)/10
+    ax[0].plot(x1)
+    ax[0].set_ylim((x1_min-tmp,x1_max+tmp))
+
+    [x2_min, x2_max] = [np.min(x2), np.max(x2)]
+    if x2_min == x2_max:
+        tmp = x2_max/10.
+    else:
+        tmp = (x2_max-x2_min)/10
+    ax[1].plot(x2)
+    ax[1].set_ylim((x2_min-tmp,x2_max+tmp))
+
+    # set spines
+    ax[0].spines['bottom'].set_visible(False)
+    ax[1].spines['top'].set_visible(False)
+
+    #
+    ax[0].xaxis.tick_top()
+    ax[1].xaxis.tick_bottom()
+
+    ax[1].tick_params(labeltop=False)
+
+    # draw diagonal marks where axises break
+    kwargs = dict(transform=ax[0].transAxes, color='k', clip_on=False)
+    ax[0].plot((-d, +d), (-d, +d), **kwargs)
+    ax[0].plot((1 - d, 1 + d), (-d, +d), **kwargs)
+    kwargs.update(transform=ax3_2.transAxes)
+    ax[1].plot((-d, +d), (1 - d, 1 + d), **kwargs)
+    ax[1].plot((1 - d, 1 + d), (1 - d, 1 + d), **kwargs)
+
+    return fig
+
+
 class Gif:
     # Gif-making class, a encapsulation of matplotlib functions
     def __init__(self):
@@ -236,37 +277,37 @@ class Gif:
         ani.save(fpath,fps=fps,writer='pillow')
 
 
-def savefig(fig,name=None,dir='./images'):
+def savefig(fig,fig_name=None,fig_dir='./images'):
 
-    if not os.path.exists(dir):
-        os.makedirs(dir)
+    if not os.path.exists(fig_dir):
+        os.makedirs(fig_dir)
 
     # use date as name if name is not defined
-    if name is None:
-        name = '{0.year}_{0.month}_{0.day}.png'.format(datetime.date.today())
+    if fig_name is None:
+        fig_name = '{0.year}_{0.month}_{0.day}.png'.format(
+                                            datetime.date.today())
 
     matplotlib_fig_suffixs = ['.eps', '.pdf', '.pgf', '.png', '.ps', '.raw',
                              '.rgba', '.svg', '.svgz']
 
     # check whether name has suffix
-    stem = pathlib.PurePath(name).stem
-    suffix = pathlib.PurePath(name).suffix
+    stem = pathlib.PurePath(fig_name).stem
+    suffix = pathlib.PurePath(fig_name).suffix
     if suffix == '':
         suffix = '.png'
 
     if suffix == '.jpg': # not support in matplotlib
         fig_path = os.path.join(dir,''.join((stem,'.png')))
         fig.savefig(fig_path)
-        Image.open(fig_path).convert('RGB').save(os.path.join(dir,
-                                                              ''.join((stem,
-                                                                      '.jpg'))))
+        Image.open(fig_path).convert('RGB').save(
+                                os.path.join(fig_dir, ''.join((stem, '.jpg'))))
         os.remove(fig_path)
     else:
-        fig_path = os.path.join(dir,''.join((stem,suffix)))
+        fig_path = os.path.join(fig_dir,''.join((stem,suffix)))
         fig.savefig(fig_path)
 
     if True:
-        print('{}{} is saved in {}'.format(stem,suffix,dir))
+        print('{}{} is saved in {}'.format(stem,suffix,fig_dir))
 
 
 

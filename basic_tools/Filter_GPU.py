@@ -19,7 +19,7 @@ class Filter_GPU:
             coef = tf.compat.v1.placeholder(dtype=tf.float64,shape=(None,1,1))
             coef_flip_pad = tf.pad(tf.reverse(coef,axis=[0]),
                                    paddings=[[0,tf.shape(coef)[0]-1],[0,0],[0,0]])
-            y = tf.nn.convolution(input=x,filter=coef_flip_pad,padding='SAME')
+            y = tf.nn.convolution(input=x,filters=coef_flip_pad,padding='SAME')
 
             init = tf.compat.v1.global_variables_initializer()
             self._sess.run(init)
