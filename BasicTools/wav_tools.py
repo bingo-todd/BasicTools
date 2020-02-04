@@ -9,7 +9,7 @@ import soundfile as sf
 # from . import plot_tools
 
 
-def wav_read(fpath, tar_fs=None):
+def read_wav(fpath, tar_fs=None):
     """ read wav file, implete with soundfile
     """
     if True:
@@ -31,7 +31,7 @@ def wav_read(fpath, tar_fs=None):
     return [x, fs]
 
 
-def wav_write(x, fs, fpath):
+def write_wav(x, fs, fpath):
     """ write wav file,  implete with soundfile
     """
     if True:
@@ -325,7 +325,7 @@ def test():
     print('test')
     wav_fpath = 'resource/tar.wav'
     print(wav_fpath)
-    data, fs = wav_read(wav_fpath)
+    data, fs = read_wav(wav_fpath)
 
     # vad
     # vad_flag_all,fig = vad(data,fs,frame_dur=20e-3,is_plot=True,theta=20)
