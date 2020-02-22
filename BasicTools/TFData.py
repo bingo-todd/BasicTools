@@ -70,6 +70,7 @@ class TFData(object):
         # sign, indicate whether all files have been read, 1 epoch
         self.is_epoch_finish = False
 
+
     def query_if_finish(self):
         if not self._query_if_ready() and self.is_epoch_finish:
             return True
@@ -132,7 +133,7 @@ class TFData(object):
                 stop = True
 
 
-    def start(self,file_dir,n_thread=1,is_repeat=False):
+    def start(self,file_dir, n_thread=1, is_repeat=False):
         self.is_epoch_finish = False
         self.is_repeat = is_repeat
         self.file_dir = file_dir
