@@ -109,13 +109,13 @@ def frame_data(x, frame_len, shift_len):
     if len(x.shape) == 1:
         x = x[:, np.newaxis]
 
-    n_sample, n_chann = x.shape
+    n_sample, *sample_shape = x.shape
     n_frame = np.int(np.floor(np.float32(n_sample-frame_len)/shift_len)+1)
-    frame_all = np.zeros((n_frame, frame_len, n_chann))
+    frame_all = np.zeros((n_frame, frame_len, *sample_shape))
     for frame_i in range(n_frame):
         frame_slice = slice(frame_i*shift_len, frame_i*shift_len+frame_len)
         frame_all[frame_i] = x[frame_slice]
-    return np.squeeze(frame_all)
+    return frame_all
 
 
 def set_snr(x, ref, snr):
