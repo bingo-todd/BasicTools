@@ -1,4 +1,5 @@
 __pycache__/
 dist/
 build/
+MANIFEST
 sync_config
