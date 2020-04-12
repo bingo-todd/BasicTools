@@ -53,7 +53,9 @@ def plot_contour(ax,*args,is_label=False,line_container=None,**kwargs):
     contour_set = ax.contour(*args,**kwargs)
     return contour_set
 
-def imshow(ax,Z,x=None,y=None,vmin=None,vmax=None,**kwargs):
+def imshow(Z, ax=None, x=None, y=None, vmin=None,vmax=None,**kwargs):
+    if ax is None:
+        fig, ax = plt.subplots(1, 1)
     if x is None or y is None:
         y_len,x_len = Z.shape
         x = np.arange(x_len)

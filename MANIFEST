@@ -4,6 +4,7 @@ BasicTools/DspTools.py
 BasicTools/Filter_GPU.py
 BasicTools/ProcessBar.py
 BasicTools/ProcessBarMulti.py
+BasicTools/ProcessBar_test.py
 BasicTools/TFData.py
 BasicTools/__init__.py
 BasicTools/fft.py
