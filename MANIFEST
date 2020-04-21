@@ -2,6 +2,7 @@
 setup.py
 BasicTools/DspTools.py
 BasicTools/Filter_GPU.py
+BasicTools/Filter_GPU_v2.py
 BasicTools/ProcessBar.py
 BasicTools/ProcessBarMulti.py
 BasicTools/ProcessBar_test.py
