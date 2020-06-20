@@ -69,7 +69,7 @@ def imshow(Z, ax=None, x=None, y=None, vmin=None,vmax=None,**kwargs):
     basic_settings = {'cmap':cm.coolwarm}  # ,'interpolation':'bilinear'}
     basic_settings.update(kwargs)
 
-    im = NonUniformImage(ax,**basic_settings,extent=(x[0],x[1],y[0],y[-1]))
+    im = NonUniformImage(ax,**basic_settings,extent=(x[0],x[-1],y[0],y[-1]))
     im.set_data(x,y,Z_norm)
     ax.images.append(im)
     ax.set_xlim([x[0],x[-1]])
