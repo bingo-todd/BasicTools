@@ -293,17 +293,17 @@ def truncate_data(x, trunc_type="both", eps=1e-5):
     return x[start_pos:end_pos+1]
 
 
-def hz2erbscal(self, freq):
+def hz2erbscal(freq):
     """convert Hz to ERB scale"""
     return 21.4*np.log10(4.37*freq/1e3+1)
 
 
-def erbscal2hz(self, erb_num):
+def erbscal2hz(erb_num):
     """convert ERB scale to Hz"""
     return (10**(erb_num/21.4)-1)/4.37*1e3
 
 
-def cal_erb(self, cf):
+def cal_erb(cf):
     """calculate the ERB(Hz) of given center frequency based on equation
     given by Glasberg and Moore
     Args
@@ -312,7 +312,7 @@ def cal_erb(self, cf):
     return 24.7*(4.37*cf/1000+1.0)
 
 
-def cal_bw(self, cf):
+def cal_bw(cf):
     """calculate the 3-dB bandwidth
     Args
         cf: center frequency Hz, single value or numpy array
