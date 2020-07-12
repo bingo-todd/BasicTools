@@ -12,6 +12,7 @@ BasicTools\__init__.py
 BasicTools\fft.py
 BasicTools\gcc.py
 BasicTools\get_fpath.py
+BasicTools\ndindex.py
 BasicTools\plot_tools.py
 BasicTools\query_resrc.py
 BasicTools\reverb_time.py
