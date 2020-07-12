@@ -22,8 +22,9 @@ class ProcessBar(object):
         return self.value >= self.max_value
 
     def _get_n_col_bar(self):
-        n_col_terminal = os.get_terminal_size()[0]
-        n_col_bar = int(n_col_terminal*0.66)
+        # n_col_terminal = os.get_terminal_size()[0]
+        # n_col_bar = int(n_col_terminal*0.66)
+        n_col_bar = 50
         return n_col_bar
 
     def update(self, value=None):

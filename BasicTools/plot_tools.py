@@ -66,7 +66,7 @@ def imshow(Z, ax=None, x=None, y=None, vmin=None,vmax=None,**kwargs):
         vmax = np.max(Z)
     Z_norm = (np.clip(Z,vmin,vmax)-vmin)/(vmax-vmin)
 
-    basic_settings = {'cmap':cm.coolwarm}  # ,'interpolation':'bilinear'}
+    basic_settings = {'cmap':cm.jet}  # ,'interpolation':'bilinear'}
     basic_settings.update(kwargs)
 
     im = NonUniformImage(ax,**basic_settings,extent=(x[0],x[-1],y[0],y[-1]))
