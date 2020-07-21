@@ -194,7 +194,7 @@ def cal_snr(tar, inter, frame_len=None, shift_len=None, is_plot=None):
                      label='snr')
             ax2.legend(loc='upper right')
             plt.tight_layout()
-    return snr
+    return snr_frame_all
 
 
 def gen_wn(shape, ref=None, energy_ratio=0, power=1):
