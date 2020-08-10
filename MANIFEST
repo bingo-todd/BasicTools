@@ -11,7 +11,7 @@ BasicTools/TFData.py
 BasicTools/__init__.py
 BasicTools/fft.py
 BasicTools/gcc.py
-BasicTools/get_fpath.py
+BasicTools/get_file_path.py
 BasicTools/nd_index.py
 BasicTools/plot_tools.py
 BasicTools/query_resrc.py

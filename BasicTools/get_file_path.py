@@ -12,7 +12,7 @@ def file_filter(fname, suffix):
             fname[0] != '.')
 
 
-def get_fpath(dir_path, suffix=None, pattern=None, is_exclude=False,
+def get_file_path(dir_path, suffix=None, pattern=None, is_exclude=False,
               is_absolute=False):
     """
     """
@@ -50,5 +50,5 @@ if __name__ == '__main__':
     else:
         args = []
 
-    fpath_all = get_fpath(dir_path, *args)
+    fpath_all = get_file_path(dir_path, *args)
     print('\n'.join(fpath_all))
