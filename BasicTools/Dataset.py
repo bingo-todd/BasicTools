@@ -1,5 +1,5 @@
 import numpy as np
-from BasicTools import get_fpath, wav_tools
+from BasicTools import get_file_path, wav_tools
 
 
 def file_reader(fpath_record, is_slice=True):
