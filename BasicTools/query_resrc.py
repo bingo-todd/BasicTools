@@ -2,8 +2,10 @@ import sys
 import subprocess
 import numpy as np
 import re
+import argparse
 
-def check_cpu(is_print=False):
+
+def check_cpu(is_print=True):
     BASE = 1024
 
     # top -bn1
@@ -15,7 +17,7 @@ def check_cpu(is_print=False):
     cpu_ratio = np.float(cpu_info.split()[1])
 
     #
-    mem_info = [line for line in info.decode().split('\n') if 'KiB Mem' in line][-1]
+    mem_info = [line for line in info.decode().split('\n') if 'MiB Mem' in line][-1]
     mem_info_elems = re.split(string=mem_info,pattern='[:,]')
     mem_all = np.float(mem_info_elems[1].split()[0])
     mem_used = np.float(mem_info_elems[2].split()[0])
@@ -28,11 +30,10 @@ def check_cpu(is_print=False):
 
 
 def check_gpu():
+    print('check_gpu')
     cmd_line = ['nvidia-smi']
     info = subprocess.run(cmd_line,check=True,stdout=subprocess.PIPE).stdout.decode('utf8');
-    # print(info)
-    # for i,line in enumerate(info.split('\n')):
-    #     print(i,line)
+
     n_gpu = info.count('GeForce')
 
     lines = info.split('\n')
@@ -63,23 +64,43 @@ def check_gpu():
         else:
             gpu_info[gpu_id]['usage'][user_name] = mem_used
 
-    print('MiB')
     for gpu_id in gpu_info.keys():
-        print(''.join(('GPU_ID:{0} mem_all:{1[mem_all]} ',
-                      'mem_used:{1[mem_used]} ',
-                      'mem_avaliable:{1[mem_avaliable]}')).format(gpu_id,
-                                                              gpu_info[gpu_id]))
-        print('\t usage')
+        print(f'GPU_ID: {gpu_id}')
+        print('-'*50)
+        print('Memory all:{1[mem_all]} used:{1[mem_used]} avaliable:{1[mem_avaliable]}'.format(gpu_id, gpu_info[gpu_id]))
+        usage_str = '       '
         for user_name in gpu_info[gpu_id]['usage'].keys():
-            print('\t      {} {}'.format(user_name,
-                                        gpu_info[gpu_id]['usage'][user_name]))
+            usage_str = usage_str + '{} {}; '.format(user_name, gpu_info[gpu_id]['usage'][user_name])
+        print(usage_str)
+
+
+def parse_arg():
+    parser = argparse.ArgumentParser(description='parse argments')
+    parser.add_argument('--pc', dest='pc', type=str,
+                        default='localhost', help='username@ip, default to run on local machine')
+    parser.add_argument('--device', dest='device', type=str,
+                        default='cpu', help='cpu or gpu')
+    args = parser.parse_args()
+    return args
+
+def main():
+    args = parse_arg()
+    if args.pc == 'localhost':
+        if args.device == 'cpu':
+            check_cpu()
+        elif args.device == 'gpu':
+            check_gpu()
+        else:
+            print(args.device)
+    else:
+        
+        cmd = ' '.join(['ssh', args.pc, 'python', '-m' ,'BasicTools.query_resrc', '--device', args.device])
+        print(cmd)
+        ssh = subprocess.Popen(['ssh', f'{args.pc}', f'source ~/.bashrc; python -m BasicTools.query_resrc --device {args.device}'],
+                               stdout=subprocess.PIPE,
+                               stderr=subprocess.PIPE)
+        result = ssh.stdout.readlines()
+        print(result)
 
 if __name__ == '__main__':
-    # query_resrc(is_print=True)
-    # gpu_check()
-    device_name = sys.argv[1]
-    if device_name == 'gpu':
-        check_gpu()
-    elif device_name == 'cpu':
-        cpu_usage,mem_usage = check_cpu()
-        print('cpu:{:2.2f}% mem:{:2.2f}%'.format(cpu_usage,mem_usage))
+    main()

@@ -4,7 +4,7 @@ import tensorflow as tf
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 
-class Filter_GPU:
+class GPU_Filter:
     def __init__(self, gpu_index):
         self._graph = tf.Graph()
         config = tf.compat.v1.ConfigProto()
@@ -64,7 +64,7 @@ def test_filter():
     record_cpu = dsp.lfilter(rir, 1, wav)
     t_elapsed_cpu = time.time() - t_start
 
-    filter_gpu = Filter_GPU(0)
+    filter_gpu = GPU_Filter(0)
     t_start = time.time()
     record_gpu = filter_gpu.filter(wav, coef=rir)
     t_elapsed_gpu = time.time() - t_start
@@ -79,7 +79,7 @@ def test_filter():
     ax[2].plot(record_cpu-record_gpu)
     ax[2].set_title('diff')
     plot_tools.savefig(fig, name='filter_cpu_gpu_diff',
-                       dir='../images/Filter_GPU')
+                       dir='../images/GPU_Filter')
 
 
 def test_brir_filter():
@@ -95,7 +95,7 @@ def test_brir_filter():
     record_cpu = wav_tools.brir_filter(wav, brir)
     t_elapsed_cpu = time.time() - t_start
 
-    filter_gpu = Filter_GPU(gpu_index=0)
+    filter_gpu = GPU_Filter(gpu_index=0)
     t_start = time.time()
     record_gpu = filter_gpu.brir_filter(wav, brir)
     t_elapsed_gpu = time.time() - t_start
@@ -110,7 +110,7 @@ def test_brir_filter():
     ax[2].plot(record_cpu-record_gpu)
     ax[2].set_title('diff')
     plot_tools.savefig(fig, name='brir_filter_cpu_gpu_diff',
-                       dir='../images/Filter_GPU')
+                       dir='../images/GPU_Filter')
 
 
 if __name__ == '__main__':

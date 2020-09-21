@@ -35,12 +35,12 @@ def file_reader(fpath_record, is_slice=True):
 
 
 class Dataset(object):
-    def __init__(self, file_reader, fpath_all, shuffle_size, batch_size,
+    def __init__(self, file_reader, file_paths, shuffle_size, batch_size,
                  output_shapes):
         self.file_reader = file_reader
 
-        self.fpath_all = fpath_all
-        np.random.shuffle(self.fpath_all)
+        self.file_paths = file_paths
+        np.random.shuffle(self.file_paths)
 
         self.shuffle_size = shuffle_size
         self.batch_size = batch_size
@@ -59,7 +59,7 @@ class Dataset(object):
                                                axis=0)
         while (self.data_bare[0].shape[0] < self.shuffle_size
                and not self.is_finish_load()):
-            data = self.file_reader(self.fpath_all[self.cur_file_i])
+            data = self.file_reader(self.file_paths[self.cur_file_i])
             self.cur_file_i = self.cur_file_i + 1
             for i in range(self.n_output):
                 self.data_bare[i] = np.concatenate((self.data_bare[i],
@@ -75,7 +75,7 @@ class Dataset(object):
         return self.is_finish_load() and self.data_bare[0].shape[0] == 0
 
     def is_finish_load(self):
-        return self.cur_file_i >= len(self.fpath_all)
+        return self.cur_file_i >= len(self.file_paths)
 
     def next_batch(self):
         while (self.data_bare[0].shape[0] < self.batch_size
@@ -89,7 +89,7 @@ class Dataset(object):
 
     def reset(self):
         self.cur_file_i = 0
-        np.random.shuffle(self.fpath_all)
+        np.random.shuffle(self.file_paths)
         self.data_bare = [np.zeros((0, *shape))
                           for shape in self.output_shapes]
         self.data_bare_left = [np.zeros((0, *shape))
@@ -97,16 +97,16 @@ class Dataset(object):
 
 
 class Dataset_combined(object):
-    def __init__(self, file_reader, fpath_all_1, fpath_all_2, shuffle_size,
+    def __init__(self, file_reader, file_paths_1, file_paths_2, shuffle_size,
                  batch_size, output_shapes):
         self.file_reader = file_reader
         self.shuffle_size = shuffle_size
         self.batch_size = batch_size
-        self.fpath_all_1 = fpath_all_1
-        self.dataset_1 = Dataset(file_reader, fpath_all_1, shuffle_size,
+        self.file_paths_1 = file_paths_1
+        self.dataset_1 = Dataset(file_reader, file_paths_1, shuffle_size,
                                  batch_size, output_shapes)
-        self.fpath_all_2 = fpath_all_2
-        self.dataset_2 = Dataset(file_reader, fpath_all_2, shuffle_size,
+        self.file_paths_2 = file_paths_2
+        self.dataset_2 = Dataset(file_reader, file_paths_2, shuffle_size,
                                  batch_size, output_shapes)
 
     def next_batch(self):
@@ -128,11 +128,11 @@ class Dataset_combined(object):
 
 if __name__ == '__main__':
     train_set_dir = '../Data/v1/train/reverb/Room_A/'
-    fpath_all_1 = get_fpath(train_set_dir, '.wav', is_absolute=True)
+    file_paths_1 = get_fpath(train_set_dir, '.wav', is_absolute=True)
 
     train_set_dir = '../Data/v1/train/reverb/Anechoic/'
-    fpath_all_2 = get_fpath(train_set_dir, '.wav', is_absolute=True)
-    # dataset = Dataset_combined(file_reader, fpath_all_1, fpath_all_2,
+    file_paths_2 = get_fpath(train_set_dir, '.wav', is_absolute=True)
+    # dataset = Dataset_combined(file_reader, file_paths_1, file_paths_2,
     #                            1024*5, 1024,
     #                            [[640, 2, 1], [640, 2, 1], [37]])
 
@@ -142,7 +142,7 @@ if __name__ == '__main__':
     #     n_batch = n_batch + 1
     # print(n_batch)
 
-    dataset = Dataset(file_reader, fpath_all_1, 1024*5, 1024,
+    dataset = Dataset(file_reader, file_paths_1, 1024*5, 1024,
                       [[640, 2, 1], [640, 2, 1], [37], [37]])
 
     n_batch = 0

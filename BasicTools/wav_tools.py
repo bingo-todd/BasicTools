@@ -28,7 +28,7 @@ def read_wav(fpath, tar_fs=None):
         x = x.reshape([-1, channel_num])
         wav_file.close()
 
-    return [x, fs]
+    return [x.astype(np.float32), fs]
 
 
 def write_wav(x, fs, fpath):

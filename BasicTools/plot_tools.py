@@ -9,6 +9,7 @@ import datetime
 from PIL import Image
 import pathlib
 from functools import wraps
+import itertools
 
 
 def line_collector(plot_func):
@@ -53,29 +54,55 @@ def plot_contour(ax,*args,is_label=False,line_container=None,**kwargs):
     contour_set = ax.contour(*args,**kwargs)
     return contour_set
 
-def imshow(Z, ax=None, x=None, y=None, vmin=None,vmax=None,**kwargs):
+def imshow(Z, ax=None, x_lim=None, y_lim=None, vmin=None, vmax=None, **kwargs):
     if ax is None:
         fig, ax = plt.subplots(1, 1)
-    if x is None or y is None:
-        y_len,x_len = Z.shape
-        x = np.arange(x_len)
-        y = np.arange(y_len)
+    if x_lim is None or y_lim is None:
+        x_lim = [0, Z.shape[1]]
+        y_lim = [0, Z.shape[0]]
 
     if vmin is None or vmax is None:
         vmin = np.min(Z)
         vmax = np.max(Z)
     Z_norm = (np.clip(Z,vmin,vmax)-vmin)/(vmax-vmin)
 
-    basic_settings = {'cmap':cm.jet}  # ,'interpolation':'bilinear'}
+    basic_settings = {'cmap':cm.jet, 'aspect':'auto'}
     basic_settings.update(kwargs)
-
-    im = NonUniformImage(ax,**basic_settings,extent=(x[0],x[-1],y[0],y[-1]))
-    im.set_data(x,y,Z_norm)
-    ax.images.append(im)
-    ax.set_xlim([x[0],x[-1]])
-    ax.set_ylim([y[0],y[-1]])
-
+    
+    ax.imshow(Z_norm, extent=[*x_lim, *y_lim], **basic_settings)
     return ax
+
+
+def plot_confuse_matrix(cm, classes=None, normalize=True, 
+        title='Confusion matrix', cmap=plt.cm.Blues):
+    """
+    This function prints and plots the confusion matrix.
+    Normalization can be applied by setting `normalize=True`.
+    Input
+    - cm: confuse matrix
+    - classes: label of each class 
+    - normalize: whether normalization
+    """
+    n_class = cm.shape[0]
+    if classes is None:
+        classes = list(map(str, range(n_class)))
+
+    fig, ax = plt.subplots(1, 1, tight_layout=True)
+    plt.imshow(cm, interpolation='nearest', cmap=cmap, vmin=0, vmax=1)
+    plt.title(title)
+    plt.colorbar()
+    tick_marks = np.arange(len(classes))
+    plt.xticks(tick_marks, classes)  # rotation=45)
+    plt.yticks(tick_marks, classes)
+    fmt = '.2f' if normalize else 'd'
+    thresh = cm.max() / 2.
+    for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
+        plt.text(j, i, format(cm[i, j], fmt),
+                 horizontalalignment="center",
+                 color="white" if cm[i, j] > thresh else "black")
+    plt.ylabel('True label')
+    plt.xlabel('Predicted label')
+    return fig, ax
 
 
 def plot_surf(Z,X=None,Y=None,ax=None,**kwargs):
@@ -147,70 +174,68 @@ def break_plot():
     savefig(fig,'break_axis')
 
 
-def plot_wav_spec(wav_all,label_all=None,fs=None,frame_len=1024,
-                  shift_len=512,yscale='mel'):
+def plot_wav_spec(wav, fs=None, ax_wav=None, label=None, is_plot_spec=True, ax_spec=None, 
+        frame_len=1024, shift_len=512, yscale='mel', amp_max=None): 
     """plot spectrogram of given len
     Args:
-        wav_all: list of 1-channel signal
-        label_all: labels of each wav
-        fs: sample frequency
-        frame_dur:
-        yaxis_type: options 'mel'
     """
-    import fft
-    from auditory_scale import erb
-    from auditory_scale import mel
+    from . import fft
 
-    if  isinstance(wav_all,np.ndarray):
-        wav_all = [wav_all]
-
-    n_wav = len(wav_all)
-    if label_all is None:
-        label_all = ['']*n_wav
-
-    amp_max_overall = np.max([np.max(np.abs(wav)) for wav in wav_all])
-
+    if amp_max is None:
+        amp_max = np.max(np.abs(wav))
+    
     stft_params = {'frame_len':frame_len,'shift_len':shift_len,'fs':fs}
-    stft_amp_dB_all =  [20*np.log10(np.abs(fft.cal_stft(wav,**stft_params)[0]))
-                                                            for wav in wav_all]
-    stft_amp_max_overall = np.max([np.max(stft_amp_dB)
-                                    for stft_amp_dB in stft_amp_dB_all])
-    stft_amp_min_overall = stft_amp_max_overall-60
+    n_sample = wav.shape[0]
+    n_frame = np.int(np.floor(np.float32(n_sample-frame_len)/shift_len)+1)
+    n_bin = int(frame_len/2)
 
-    fig,ax = plt.subplots(2,n_wav,figsize=[4*n_wav,6])
     if fs is None:
+        t_tick_wav = np.arange(n_sample)
+        t_tick_stft = np.arange(n_frame)
+        freq_tick = np.arange(n_bin)/n_bin
         t_label = 'sample(n)'
         freq_label = 'normalizeed frequnecy'
     else:
+        t_tick_wav = np.arange(wav.shape[0])/fs
+        t_tick_stft = (np.arange(n_frame)+1)*shift_len/fs
+        freq_tick = np.arange(n_bin)/frame_len*fs/1000
         t_label = 'time(s)'
         freq_label = 'frequnecy(kHz)'
 
-    for wav_i,[wav,wav_name] in enumerate(zip(wav_all,label_all)):
-        n_frame,n_bin = stft_amp_dB_all[wav_i].shape
-        if fs is None:
-            t_tick_wav = np.arange(wav.shape[0])
-            t_tick_stft = np.arange(n_frame)
-            freq_tick = np.arange(n_bin)/n_bin
+    if ax_wav is None:
+        if is_plot_spec:
+            fig, ax = plt.subplots(2, 1)
+            ax_wav, ax_spec = ax
         else:
-            t_tick_wav = np.arange(wav.shape[0])/fs
-            t_tick_stft = (np.arange(n_frame)+1)*shift_len/fs
-            freq_tick = np.arange(n_bin)/frame_len*fs
+            fig, ax_wav = plt.subplots(2, 1)
+    else:
+        if is_plot_spec and ax_spec is None:
+            print('ax_spec is not specified, spec will not be plot')
+ 
+    ax_wav.plot(t_tick_wav, wav, label=label)
+    ax_wav.set_xlabel(t_label)
+    ax_wav.set_ylim((-amp_max,amp_max))
 
-        ax[0,wav_i].plot(t_tick_wav,wav)
-        ax[0,wav_i].set_ylim((-amp_max_overall,amp_max_overall))
-        ax[0,wav_i].set_title(wav_name)
+    if is_plot_spec and ax_spec is not None:
+        stft_amp_dB = 20*np.log10(np.abs(fft.cal_stft(wav, **stft_params)[0]))
+        stft_amp_max = np.max(stft_amp_dB)
+        stft_amp_min = stft_amp_max - 60
 
-        imshow(ax[1,wav_i],Z=stft_amp_dB_all[wav_i].T,
-                  x=t_tick_stft,y=freq_tick,
-                  vmin=stft_amp_min_overall,vmax=stft_amp_max_overall,
-                  interpolation='nearest',origin='lower')
+        n_frame,n_bin = stft_amp_dB.shape
+        imshow(ax=ax_spec, Z=stft_amp_dB.T, 
+            x_lim=[0, t_tick_stft[-1]], y_lim=[0, freq_tick[-1]],
+            vmin=stft_amp_min,vmax=stft_amp_max, 
+            origin='lower')  # , interpolation='nearest')
+        ax_spec.set_xlabel(t_label)
+        ax_spec.set_ylabel(freq_label)
+        ax_spec.yaxis.set_major_formatter('{x:.1f}')
+        # plt.setp(ax[1, wav_i].get_yticklabels(), visible=False)
 
-        ax[1,wav_i].set_xlabel(t_label)
-        if wav_i == 0:
-            ax[1,wav_i].set_ylabel(freq_label)
-
-    plt.tight_layout()
-    return fig
+    if ax_wav is None:
+        if is_plot_spec:
+            return fig, ax_wav, ax_spec
+        else:
+            return fig, axi_wav
 
 
 def plot_break_axis(x1,x2):

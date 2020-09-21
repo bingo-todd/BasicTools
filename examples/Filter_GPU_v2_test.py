@@ -8,7 +8,7 @@ sys.path.append('../BasicTools')
 from Filter_GPU_v2 import Filter_GPU
 
 gpus = tf.config.experimental.list_physical_devices('GPU')
-tf.config.experimental.set_visible_devices(gpus[1], 'GPU')
+tf.config.experimental.set_visible_devices(gpus[0], 'GPU')
 print(gpus)
 for gpu in gpus:
     tf.config.experimental.set_memory_growth(gpu, True)

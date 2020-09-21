@@ -23,7 +23,7 @@ def cal_stft(x, win_f=np.hanning, frame_len=1024, shift_len=None,
     if shift_len is None:
         shift_len = np.int(frame_len/2)
 
-    frames = wav_tools.frame_data(x, frame_len, shift_len)
+    frames = np.squeeze(wav_tools.frame_data(x, frame_len, shift_len))
     window = win_f(frame_len)
     frames = np.multiply(frames, window)
     #
