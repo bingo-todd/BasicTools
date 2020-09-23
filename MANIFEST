@@ -10,11 +10,11 @@ BasicTools/ProcessBar_test.py
 BasicTools/TFData.py
 BasicTools/__init__.py
 BasicTools/fft.py
-BasicTools/file2dict.py
 BasicTools/gcc.py
 BasicTools/get_file_path.py
 BasicTools/nd_index.py
 BasicTools/normalize.py
+BasicTools/parse_file.py
 BasicTools/plot_tools.py
 BasicTools/plot_wav.py
 BasicTools/query_resrc.py
