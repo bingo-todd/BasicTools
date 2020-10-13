@@ -1,4 +1,5 @@
 import wave
+import os
 import numpy as np
 import scipy.signal as dsp_tools
 import matplotlib.pyplot as plt
@@ -9,16 +10,17 @@ import soundfile as sf
 # from . import plot_tools
 
 
-def read_wav(fpath, tar_fs=None):
+def read_wav(wav_path, tar_fs=None):
     """ read wav file, implete with soundfile
     """
+    wav_path = os.path.expanduser(wav_path)
     if True:
-        x, fs = sf.read(fpath)
+        x, fs = sf.read(wav_path)
         if tar_fs is not None and tar_fs != fs:
             x = resample(x, fs, tar_fs)
             fs = tar_fs
     else:
-        wav_file = wave.open(fpath, 'r')
+        wav_file = wave.open(wav_path, 'r')
         sample_num = wav_file.getnframes()
         channel_num = wav_file.getnchannels()
         fs = wav_file.getframerate()
@@ -31,11 +33,12 @@ def read_wav(fpath, tar_fs=None):
     return [x.astype(np.float32), fs]
 
 
-def write_wav(x, fs, fpath):
+def write_wav(x, fs, wav_path):
     """ write wav file,  implete with soundfile
     """
+    wav_path = os.path.expanduser(wav_path)
     if True:
-        sf.write(file=fpath, data=x, samplerate=fs)
+        sf.write(file=wav_path, data=x, samplerate=fs)
     else:
         bits_per_sample = 16
         samples = np.asarray(x*(2**(bits_per_sample)), dtype=np.int16)
@@ -45,7 +48,7 @@ def write_wav(x, fs, fpath):
         else:
             channel_num = 1
 
-        wav_file = wave.open(fpath, 'w')
+        wav_file = wave.open(wav_path, 'w')
         wav_file.setparams((channel_num, 2, fs, sample_num, 'NONE',
                             'not compressed'))
         wav_file.writeframes(samples.tostring())
@@ -102,11 +105,16 @@ def frame_data(x, frame_len, shift_len):
     Returns:
         [n_frame,frame_len,n_chann]
     """
-    if frame_len <= 1:
+    x = np.asarray(x)
+
+    if frame_len < 1:
         return x
+    if frame_len == 1:
+        return np.expand_dims(x, axis=1)
 
     # ensure x is 2d array
-    if len(x.shape) == 1:
+    n_dim = len(x.shape)
+    if n_dim == 1:
         x = x[:, np.newaxis]
 
     n_sample, *sample_shape = x.shape
@@ -115,6 +123,9 @@ def frame_data(x, frame_len, shift_len):
     for frame_i in range(n_frame):
         frame_slice = slice(frame_i*shift_len, frame_i*shift_len+frame_len)
         frame_all[frame_i] = x[frame_slice]
+
+    if n_dim == 1:
+        frame_all = np.squeeze(frame_all)
     return frame_all
 
 
@@ -170,9 +181,9 @@ def cal_snr(tar, inter, frame_len=None, shift_len=None, is_plot=None):
         frame_all_tar = frame_data(tar, frame_len, shift_len)
         frame_all_inter = frame_data(inter, frame_len, shift_len)
         n_frame = frame_all_tar.shape[0]
-        snr_frame_all = np.asarray([_cal_snr(frame_all_tar[i],
-                                             frame_all_inter[i])
-                                    for i in range(n_frame)])
+        snr = np.asarray([_cal_snr(frame_all_tar[i],
+                                   frame_all_inter[i])
+                          for i in range(n_frame)])
         if is_plot:
             n_sample = tar.shape[0]
             # waveform of tar and inter
@@ -190,11 +201,10 @@ def cal_snr(tar, inter, frame_len=None, shift_len=None, is_plot=None):
             ax2.set_ylabel('snr(dB)')
             # time: center of frame
             frame_t_all = np.arange(n_frame)*shift_len+np.int16(frame_len/2)
-            ax2.plot(frame_t_all, snr_frame_all, color='red', linewidth=2,
+            ax2.plot(frame_t_all, snr, color='red', linewidth=2,
                      label='snr')
             ax2.legend(loc='upper right')
-            plt.tight_layout()
-    return snr_frame_all
+    return snr
 
 
 def gen_wn(shape, ref=None, energy_ratio=0, power=1):
@@ -217,60 +227,6 @@ def gen_wn(shape, ref=None, energy_ratio=0, power=1):
         coef = np.sqrt(power/power_orin)
         wn = wn*coef
     return wn
-
-
-def vad(x, frame_len, shift_len=None, theta=40, is_plot=False):
-    """ Energy based vad.
-        1. Frame data with shift_len of 0
-        2. Calculte the energy of each frame
-        3. Frames with energy below max_energy-theta is regarded as
-            silent frames
-    Args:
-        x: single channel signal
-        frame_len: frame length
-        shift_len: frames shift length in time
-        theta: the maximal energy difference between frames, default 40dB
-        is_plot: whether to ploting vad result, default False
-    Returns:
-        vad_flag_all, as well as figures of vad_labesl if is_plot is ture
-    """
-    if shift_len is None:
-        shift_len = frame_len
-
-    frame_all = frame_data(x, frame_len, shift_len)
-    energy_frame_all = np.sum(frame_all**2, axis=1)
-    energy_thd = np.max(energy_frame_all)/(10**(theta/10.0))
-    vad_flag_all = np.greater(energy_frame_all, energy_thd)
-
-    if is_plot and (frame_len == shift_len):
-        # if dpi is low, speech line and silence line will be shift_lenped
-        fig = plt.figure(dpi=500)
-        ax = fig.subplots(1, 1)
-        line_speech = None
-        line_silence = None
-        n_frame = frame_all.shape[0]
-        for frame_i in range(n_frame):
-            frame = frame_all[frame_i]
-            start_pos = frame_i*shift_len
-            end_pos = start_pos+frame_len
-            if vad_flag_all[frame_i]:
-                [line_speech] = ax.plot(np.arange(start_pos, end_pos), frame,
-                                        linewidth=1, color='red')
-            else:
-                # np.arange(start_pos,end_pos)/fs,
-                [line_silence] = ax.plot(np.arange(start_pos, end_pos), frame,
-                                         linewidth=1, color='blue')
-        if line_speech is not None:
-            line_speech.set_label('speech')
-        if line_silence is not None:
-            line_silence.set_label('silence')
-        ax.legend()
-        ax.set_xlabel('time(s)')
-        ax.set_ylabel('amp')
-        ax.set_title('threshold={}dB'.format(theta))
-        return [vad_flag_all, fig]
-    else:
-        return vad_flag_all
 
 
 def truncate_data(x, trunc_type="both", eps=1e-5):
@@ -310,15 +266,6 @@ def cal_erb(cf):
         cf: center frequency Hz, single value or numpy array
     """
     return 24.7*(4.37*cf/1000+1.0)
-
-
-def cal_bw(cf):
-    """calculate the 3-dB bandwidth
-    Args
-        cf: center frequency Hz, single value or numpy array
-    """
-    erb = self.cal_ERB(cf)
-    return 1.019*erb
 
 
 def test():

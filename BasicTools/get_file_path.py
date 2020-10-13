@@ -1,19 +1,9 @@
 import os
-import re
 
 
-def file_filter(file_name, suffix):
-    if suffix is None:
-        return True
-
-    suffix_len = len(suffix)
-    return (len(file_name) > suffix_len
-            and file_name[-suffix_len:] == suffix and
-            file_name[0] != '.')
-
-
-def get_realpath(file_path, root_dir=None):
-    realpath = os.path.realpath(file_path)
+def get_realpath(file_path, root_dir):
+    realpath = os.path.realpath(
+        os.path.expanduser(file_path))
     if root_dir is not None:
         root_dir_tmp = os.path.expanduser(root_dir)
         if os.path.islink(root_dir_tmp):
@@ -28,32 +18,28 @@ def get_realpath(file_path, root_dir=None):
     return realpath.replace('//', '/')
 
 
-def get_file_path(dir_path, suffix=None, pattern=None, is_exclude=False,
-              is_absolute=False, root_dir=None):
+def get_file_path(dir_path, suffix=None, filter_func=None,
+                  is_absolute=False, root_dir=None):
     """
     """
-    file_path_rel_all = []
+    if filter_func is None:
+        filter_func = lambda x: True
+
+    file_relpath_all = []
     for file_dir, _, file_names in os.walk(dir_path):
         for file_name in file_names:
-            if not file_filter(file_name, suffix):
-                continue
- 
-            file_path_rel = f'{file_dir}/{file_name}'
-
-            if pattern is not None:
-                n_match = len(re.findall(pattern, file_path_rel))
-                if is_exclude and (n_match > 0):
-                    continue
-                if (not is_exclude) and (n_match < 1):
-                    continue
-            file_path_rel_all.append(file_path_rel)
+            if (suffix is None
+                    or file_name.split('.')[-1] == suffix.split('.')[-1]):
+                file_relpath = f'{file_dir}/{file_name}'
+                if filter_func(file_relpath):
+                    file_relpath_all.append(file_relpath)
 
     if is_absolute:
-        file_path_real_all = [get_realpath(file_path_rel, root_dir)
-                              for file_path_rel in file_path_rel_all]
-        return file_path_real_all
+        file_realpath_all = [get_realpath(file_relpath, root_dir)
+                             for file_relpath in file_relpath_all]
+        return file_realpath_all
     else:
-        return file_path_rel_all
+        return file_relpath_all
 
 
 if __name__ == '__main__':
