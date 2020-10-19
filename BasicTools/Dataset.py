@@ -1,37 +1,4 @@
 import numpy as np
-from BasicTools import get_file_path, wav_tools
-
-
-def file_reader(fpath_record, is_slice=True):
-    frame_len = 320*2
-    shift_len = 160
-    n_azi = 37
-
-    if isinstance(fpath_record, bytes):
-        fpath_record = fpath_record.decode('utf-8')
-
-    *_, test_i, set_type, _, room, fname_tar = fpath_record.split('/')
-    azi, wav_i = [np.int16(item) for item in fname_tar[:-4].split('_')]
-
-    # record signal
-    record, fs = wav_tools.read_wav(fpath_record)
-    wav_r = np.expand_dims(
-                wav_tools.frame_data(record, frame_len, shift_len),
-                axis=-1)
-
-    # direct signal
-    fpath_direct = fpath_record.replace('reverb', 'direct')
-    direct, fs = wav_tools.read_wav(fpath_direct)
-    wav_d = np.expand_dims(
-                wav_tools.frame_data(direct, frame_len, shift_len),
-                axis=-1)
-
-    n_sample = wav_d.shape[0]
-    # onehot azi label
-    loc_label = np.zeros((n_sample, n_azi))
-    loc_label[:, azi] = 1
-
-    return [wav_d, wav_r, loc_label, loc_label]
 
 
 class Dataset(object):
@@ -47,28 +14,31 @@ class Dataset(object):
         self.output_shapes = output_shapes
         self.n_output = len(output_shapes)
         self.cur_file_i = 0
-        self.data_bare = [np.zeros((0, *shape), dtype=np.float32) for shape in output_shapes]
+        self.data_bare = [np.zeros((0, *shape), dtype=np.float32)
+                          for shape in output_shapes]
         self.data_bare_left = [np.zeros((0, *shape), dtype=np.float32)
                                for shape in output_shapes]
 
     def _load(self):
+        # TODO self.data_bare dtype auto change to float64
         # data left from last loading
         for i in range(self.n_output):
-            self.data_bare[i] = np.concatenate((self.data_bare[i],
-                                                self.data_bare_left[i]),
-                                               axis=0)
+            self.data_bare[i] = np.concatenate(
+                [self.data_bare[i].astype(np.float32),
+                 self.data_bare_left[i].astype(np.float32)],
+                axis=0)
         while (self.data_bare[0].shape[0] < self.shuffle_size
                and not self.is_finish_load()):
             data = self.file_reader(self.file_paths[self.cur_file_i])
             self.cur_file_i = self.cur_file_i + 1
             for i in range(self.n_output):
-                self.data_bare[i] = np.concatenate((self.data_bare[i],
-                                                    data[i]),
-                                                   axis=0)
+                self.data_bare[i] = np.concatenate(
+                    [self.data_bare[i], data[i].astype(np.float32)],
+                    axis=0)
         n_sample_bare = min((self.data_bare[0].shape[0], self.shuffle_size))
-        rand_index = np.random.permutation(n_sample_bare).astype(np.int32)
+        rand_index = np.random.permutation(n_sample_bare).astype(np.int)
         for i in range(self.n_output):
-            self.data_bare_left[i] = self.data_bare[i][self.shuffle_size:]
+            self.data_bare_left[i] = self.data_bare[i][n_sample_bare:]
             self.data_bare[i] = self.data_bare[i][rand_index]
 
     def is_finish(self):
@@ -127,11 +97,47 @@ class Dataset_combined(object):
 
 
 if __name__ == '__main__':
+
+    def file_reader(fpath_record, is_slice=True):
+
+        frame_len = 320*2
+        shift_len = 160
+        n_azi = 37
+
+        if isinstance(fpath_record, bytes):
+            fpath_record = fpath_record.decode('utf-8')
+
+        *_, test_i, set_type, _, room, fname_tar = fpath_record.split('/')
+        azi, wav_i = [np.int16(item) for item in fname_tar[:-4].split('_')]
+
+        # record signal
+        record, fs = wav_tools.read_wav(fpath_record)
+        wav_r = np.expand_dims(
+                    wav_tools.frame_data(record, frame_len, shift_len),
+                    axis=-1)
+
+        # direct signal
+        fpath_direct = fpath_record.replace('reverb', 'direct')
+        direct, fs = wav_tools.read_wav(fpath_direct)
+        wav_d = np.expand_dims(
+                    wav_tools.frame_data(direct, frame_len, shift_len),
+                    axis=-1)
+
+        n_sample = wav_d.shape[0]
+        # onehot azi label
+        loc_label = np.zeros((n_sample, n_azi))
+        loc_label[:, azi] = 1
+
+        return [wav_d, wav_r, loc_label, loc_label]
+
+    from BasicTools.get_file_path import get_file_path
+    from BasicTools import wav_tools
+
     train_set_dir = '../Data/v1/train/reverb/Room_A/'
-    file_paths_1 = get_fpath(train_set_dir, '.wav', is_absolute=True)
+    file_paths_1 = get_file_path(train_set_dir, '.wav', is_absolute=True)
 
     train_set_dir = '../Data/v1/train/reverb/Anechoic/'
-    file_paths_2 = get_fpath(train_set_dir, '.wav', is_absolute=True)
+    file_paths_2 = get_file_path(train_set_dir, '.wav', is_absolute=True)
     # dataset = Dataset_combined(file_reader, file_paths_1, file_paths_2,
     #                            1024*5, 1024,
     #                            [[640, 2, 1], [640, 2, 1], [37]])
@@ -149,6 +155,7 @@ if __name__ == '__main__':
     while not dataset.is_finish():
         batch = dataset.next_batch()
         n_batch = n_batch + 1
-        print(np.argmax(batch[-1][:10], axis=1), np.argmax(batch[-2][:10], axis=1))
+        print(np.argmax(batch[-1][:10], axis=1),
+              np.argmax(batch[-2][:10], axis=1))
         input('continue')
     print(n_batch)
