@@ -1,83 +1,101 @@
-# Small python toolbox
+# Python toolbox
 A collection of python scripts,
 
-file structure
+** this doc need update, but all scripts work well, I used them in my daily work **
+
+Files structure
+
 ```shell
-basic_tools
-├── ccf.py  #cross-correlation functions(ccf,gcc-phat)
-├── __init__.py
-├── process_bar.py
-├── query_resrc.py  #get cpu and memory usage
-├── reverb_time.py  #calculte RT60 from room impulse response(RIR)
-├── TFData.py # data pipe for tensorflow
-└── wav_tools.py  #functions related to signal process
+├── BasicTools
+│   ├── Dataset.py
+│   ├── DspTools.py
+│   ├── easy_parallel.py
+│   ├── fft.py
+│   ├── gcc.py
+│   ├── get_file_path.py
+│   ├── GPU_Filter.py
+│   ├── GPU_Filter_tf1.14.py
+│   ├── graph.py
+│   ├── __init__.py
+│   ├── nd_index.py
+│   ├── normalize.py
+│   ├── parse_file.py
+│   ├── plot_tools.py
+│   ├── plot_wav.py
+│   ├── ProcessBarMulti.py
+│   ├── ProcessBar.py
+│   ├── ProcessBar_test.py
+│   ├── query_resrc.py
+│   ├── reverb
+│   ├── scale
+│   ├── unit_convert.py
+│   ├── VAD.py
+│   └── wav_tools.py
+├── examples
+│   ├── data
+│   ├── DspTools_example.py
+│   ├── GPU_filter_test.py
+│   ├── images
+│   ├── __init__.py
+│   └── scale_test.py
+├── install.sh
+├── __main__.py
+├── README.md
+└── setup.py
+```
+
+## Dataset
+
+Read audio dataset and return a sample generator, used for DNN model. 
+
+eg. (directly copy from my code)
+
+```python
+self.dataset_train = Dataset(                                           
+                        file_reader=self.file_reader,                   
+                        file_paths=self._get_file_path(                 
+                            self.train_set_dir),                        
+                        shuffle_size=self.batch_size*5,                 
+                        batch_size=self.batch_size,                     
+                        output_shapes=[[self.frame_len, 2, 1],          
+                                       [self.frame_len, 2, 1],          
+                                       [self.n_azi]])                                 
+                                                                        
+self.logger.info('start training')                                      
+for epoch in range(cur_epoch+1, self.max_epoch):                        
+    optimizer = tf.optimizers.Adam(lr)                                  
+    self.dataset_train.reset()                                          
+    t_start = time.time()                                               
+    while not self.dataset_train.is_finish():                           
+        x_d, x_r, y_loc = self.dataset_train.next_batch()               
+        y_irm = self.ideal_irm_nn(x_d, x_r)     
+```
+
+## easy_parallel
+
+A wrapping of  `mutliprocess` module, run your code in parallel in a few lines.
+
+```python
+def test_func(*args):                                                       
+    print(args)                                                             
+    time.sleep(np.random.randint(10, size=1))                                                                      
+    return args                                                             
+                                                                            
+# tasks = [[i] for i in range(32)]                                          
+tasks = np.random.rand(32, 2)                                               
+outputs = easy_parallel(test_func, tasks, show_process=True)                
+print(outputs)        
 ```
 
 
-## TFData
 
-  Data pipe for tensorflow
-
-  Example
-
-  ```python
-  with tf.Session() as sess:
-    coord = tf.train.Coordinator()
-    train_tfdata = TFData.TFData(train_set_dirs,[None,x_len],[None,y_len],
-                                batch_size,N_batch_in_queue,coord,file_reader_func,is_repeat)
-    train_x_batch,train_y_batch = train_tfdata.dequeue()
-    for epoch in range(max_epoch):
-        # open data-reading thread in each epoch
-        threads = train_tfdata.start_thread(sess)
-        # until at least one batch data has been ready
-        while sess.run(train_tfdata.x_queue.size())<batch_size:
-            time.sleep(0.5)
-        #
-        print('epoch %d'%epoch)
-        # one epoch finished when:
-        #   1. all files has be read;
-        #   2. Number of samples is less than one batch
-        while (not train_tfdata.is_epoch_finish) or
-                  (sess.run(train_tfdata.x_queue.size())>=batch_size):
-            train_batch_value = sess.run([train_x_batch,train_y_batch])
-            sess.run(opt_step,feed_dict={x:train_batch_value[0],
-                                         y:train_batch_value[1],
-                                         learning_rate:lr})
-        # clear queue
-        train_tfdata.empty_queue(self._sess)
-  ```
-
-## process_bar
+## ProcessBar
 
   Process bar, additonally can show cpu and memory percentage
 
-  Example
+## Reverb
 
-  ```python
-  from process_bar import process_bar
-  p = process_bar(100,is_show_resrc) # show current cpu and memory usage
-  for i in range(100):
-    p.update()
-  ```
-  if `is_show_resrc=False` <pre>|============================                      | process 56%</pre>
-  if `is_show_resrc=True`
-   <pre>|=======================                           | process 47% 	 Cpu:1.60% Mem:26.78%</pre>
-
-## query_resrc
-
-  Get cpu and memory usage(%)
-
-  Example
-
-  ```shell
-  python query_resource.py
-  ```
-
-  `cpu:1.70%  mem:30.09%`
-
-## reverb-time
-
-  Calculte RT60 from room impulse response(RIR)
+reverberation related
 
 ## wav_tools
 
@@ -109,21 +127,16 @@ wav_tools
 |
 |---set_snr(x,ref,snr)
 |
-|---test()
-|
 |---truncate_data(x,type=both,eps=1e-05)
-|
-|---vad(x,frame_len,shift_len=None,theta=40,is_plot=False)
 |
 |---wav_read(fpath,tar_fs=None)
 |
 |---wav_write(x,fs,fpath)
-```
+  ```
 
-## Filter_GPU
-  A tensorflow implementation of FIR filter, contraining 2 functions, `filter`, `brir_filter`
+## GPU_filter
+  A tensorflow implementation of FIR filter, containing 2 functions, `filter`, `brir_filter`
 
-  Comparation to filter implementation based on `scipy`(marked as 'cpu'), time consumings are given in title.
+  Comparison to `filter` in `scipy`(marked as 'cpu', cpu consumption was around 50%, GPU: TITAN RTX， CPU:i9-9980XE)
 
-  <img src='images/Filter_GPU/filter_cpu_gpu_diff.png' width=45%>
-  <img src='images/Filter_GPU/brir_filter_cpu_gpu_diff.png' width=45%>
+  <img src='examples/images/GPU_Filter/brir_filter_cpu_gpu_diff.png' width=45%>
