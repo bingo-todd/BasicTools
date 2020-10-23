@@ -1,3 +1,6 @@
+import os
+
+
 def parse_value_str(value_str, dtype):
     items = [[dtype(x) for x in item.strip().split()]
              for item in value_str.strip().split(';')]
@@ -13,6 +16,7 @@ def file2dict(file_path, dtype=None):
         file_path:
         dtype: if not specified, the value string will not be parsed further
     """
+    file_path = os.path.expanduser(file_path)
     dict_obj = {}
     with open(file_path, 'r') as dict_file:
         lines = dict_file.readlines()
@@ -47,6 +51,8 @@ def iterable(obj):
 
 
 def dict2file(file_path, dict_obj, item_format='', is_sort=True):
+    file_path = os.path.expanduser(file_path)
+
     keys = list(dict_obj.keys())
     if is_sort:
         keys.sort()
