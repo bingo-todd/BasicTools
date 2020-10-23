@@ -1,19 +1,15 @@
 import numpy as np
 import time
-import os
 
 
 class ProcessBar(object):
-    def __init__(self, max_value=100, is_show_resrc=False, title='',
-                 is_show_time=False):
+    def __init__(self, max_value=100, is_show_resrc=False, is_show_time=False):
 
         self.max_value = max_value
         self.value = 0.
         self.is_show_resrc = is_show_resrc
         self.is_show_time = is_show_time
-        self.title = title
-
-        self._is_ploted = False
+        self.n_line_pre = 0
 
     def get_cur_value(self):
         print(self.value)
@@ -27,28 +23,21 @@ class ProcessBar(object):
         n_col_bar = 50
         return n_col_bar
 
-    def update(self, value=None):
-        if value is None:
-            self.value = self.value + 1
-        else:
-            if value >= self.max_value:
-                self.value = self.max_value
-            else:
-                self.value = value
-
+    def update(self, text=''):
+        self.value = self.value + 1
         p = np.float32(self.value)/self.max_value
         n_col_bar = self._get_n_col_bar()
         n_finish = np.int16(p*n_col_bar)
         n_left = n_col_bar - n_finish
         bar_str = f"{n_finish*'>'}{n_left*'='}"
-        bar_status_str = '[{}] {:>3.0f}% {}'.format(bar_str,
-                                                    p*100,
-                                                    self.title)
-        if self._is_ploted:
-            print('\033[F', flush=True, end='')
-        else:
-            self._is_ploted = True
+        bar_status_str = f'[{bar_str}] {p*100:>3.0f}% \n {text}'
+        n_line = bar_status_str.count('\n')+1
+        if self.n_line_pre > 0:
+            [print('\033[K') for _ in range(self.n_line_pre)]
+            print(f'\033[{self.n_line_pre+1}A')  # move to start position
         print(bar_status_str)
+        print(f'\033[{n_line+1}A')  # move to start position
+        self.n_line_pre = n_line
 
 
 if __name__ == '__main__':
@@ -56,4 +45,4 @@ if __name__ == '__main__':
     pb = ProcessBar(100)
     for i in range(100):
         time.sleep(0.1)
-        pb.update()
+        pb.update(text='test\n'*(i % 5))
