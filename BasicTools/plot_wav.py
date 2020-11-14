@@ -5,81 +5,57 @@ from . import wav_tools
 from .plot_tools import plot_wav_spec
 
 
-def plot_wav(wav_path, fig_path, label=None, is_plot_spec=False, dpi=100):
-    if not isinstance(wav_path, list):
-        wav_path_all = [wav_path]
-        if label is None:
-            label_all = ['wav_0']
-        else:
-            label_all = [label]
+def plot_wav(wav_path, fig_path, plot_spec=False, mix_channel=False, dpi=100):
+
+    wav, fs = wav_tools.read_wav(wav_path)
+    amp_max = np.max(np.abs(wav))
+    if len(wav.shape) == 1:
+        wav = wav[:, np.newaxis]
+    n_channel = wav.shape[1]
+
+    if mix_channel:
+        n_col = 1
     else:
-        wav_path_all = wav_path
-        if label is None:
-            label_all = [f'wav_{i}' for i, _ in enumerate(wav_path_all)]
-        else:
-            label_all = label
-    n_wav = len(wav_path_all)
-    n_col_fig = n_wav
+        n_col = n_channel
 
-    if is_plot_spec:
-        fig, ax = plt.subplots(3, n_col_fig, tight_layout=True)
-        ax = np.reshape(ax, (3, n_col_fig))
-        ax_wav_all, ax_specgram_all, ax_spec_all = ax[0, :], ax[1, :], ax[2, :]
+    if plot_spec:
+        fig, ax = plt.subplots(3, n_col, tight_layout=True)
+        ax_wav, ax_specgram, ax_spec = ax[0], ax[1], ax[2]
     else:
-        fig, ax_wav_all = plt.subplots(1, n_col_fig, tight_layout=True)
-        if n_wav == 1:
-            ax_wav_all = [ax_wav_all]
-        ax_specgram_all = [None for i in range(n_col_fig)]
-        ax_spec_all = [None for i in range(n_col_fig)]
+        fig, ax_wav = plt.subplots(1, n_col, tight_layout=True)
+        if n_col > 1:
+            ax_specgram = [None for i in range(n_col)]
+            ax_spec = [None for i in range(n_col)]
+        else:
+            ax_specgram, ax_spec = None, None
 
-    amp_max = 0
-    for wav_i, wav_path in enumerate(wav_path_all):
-        wav, fs = wav_tools.read_wav(wav_path)
-        amp_max = max(amp_max, np.max(np.abs(wav)))
+    if n_col == 1:
+        ax_wav = [ax_wav for i in range(n_channel)]
+        ax_specgram = [ax_specgram for i in range(n_channel)]
+        ax_spec = [ax_spec for i in range(n_channel)]
 
-        for ax_i in range(wav_i):
-            ax_wav_all[ax_i].set_ylim([-amp_max, amp_max])
-        ax_wav_tmp = [ax_wav_all[wav_i], ax_wav_all[wav_i]]
-        ax_specgram_tmp = [ax_specgram_all[wav_i], ax_specgram_all[wav_i]]
-        ax_spec_tmp = [ax_spec_all[wav_i], ax_spec_all[wav_i]]
-
-        for channel_i, channel_name in enumerate(['L', 'R']):
-            plot_wav_spec(wav[:, channel_i], fs, ax_wav_tmp[channel_i],
-                          label_all[wav_i], is_plot_spec,
-                          ax_specgram_tmp[channel_i], ax_spec_tmp[channel_i],
-                          amp_max=amp_max)
-            # ax_wav_tmp[channel_i].set_title(f'{label_tmp}')
-    ax_wav_all[-1].legend()
-    for ax in ax_wav_all[1:]:
-        plt.setp(ax.get_yticklabels(), visible=False)
-    for ax in ax_spec_all[1:]:
-        if ax is not None:
-            plt.setp(ax.get_yticklabels(), visible=False)
+    for channel_i in range(n_channel):
+        plot_wav_spec(wav[:, channel_i], fs, ax_wav[channel_i],
+                      f'{channel_i}', plot_spec,
+                      ax_specgram[channel_i], ax_spec[channel_i],
+                      amp_max=amp_max)
+        if ax_wav[channel_i] is not None:
+            ax_wav[channel_i].legend()
     fig.savefig(fig_path, dpi=dpi)
-
-
-def str2bool(v):
-    if isinstance(v, bool):
-        return v
-    if v.lower() in ('yes', 'true', 't', 'y', '1'):
-        return True
-    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
-        return False
-    else:
-        raise argparse.ArgumentTypeError('Boolean value expected.')
 
 
 def parse_args():
     parser = argparse.ArgumentParser(description='parse argments')
     parser.add_argument('--wav-path', dest='wav_path', type=str,
-                        required=True,  nargs='+',
-                        help='path of wav file')
-    parser.add_argument('--label', dest='label', type=str,
-                        default=None,  nargs='+', help='path of wav file')
+                        required=True,  help='path of wav file')
     parser.add_argument('--fig-path', dest='fig_path', type=str,
                         required=True, help='path of figure to be saved')
-    parser.add_argument('--is-plot-spec', dest='is_plot_spec', type=str2bool,
-                        default=False, help='whether to plot the spectrum')
+    parser.add_argument('--plot-spec', dest='plot_spec', type=str,
+                        default='false', choices=['true', 'false'],
+                        help='whether to plot the spectrum')
+    parser.add_argument('--mix-channel', dest='mix_channel', type=str,
+                        default='false', choices=['true', 'false'],
+                        help='')
     parser.add_argument('--dpi', dest='dpi', type=int, default=100,
                         help='')
     args = parser.parse_args()
@@ -88,8 +64,11 @@ def parse_args():
 
 def main():
     args = parse_args()
-    plot_wav(args.wav_path, args.fig_path, args.label, args.is_plot_spec,
-             args.dpi)
+    plot_wav(wav_path=args.wav_path,
+             fig_path=args.fig_path,
+             plot_spec=args.plot_spec == 'true',
+             mix_channel=args.mix_channel == 'true',
+             dpi=args.dpi)
 
 
 if __name__ == '__main__':

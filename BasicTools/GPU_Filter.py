@@ -24,7 +24,7 @@ class GPU_Filter:
                          coef_conv[:, np.newaxis, np.newaxis],
                          stride=1,
                          padding='SAME')
-        return np.squeeze(np.asarray(y))
+        return np.asarray(tf.squeeze(y))
 
     def brir_filter(self, x, brir):
         if brir is None:

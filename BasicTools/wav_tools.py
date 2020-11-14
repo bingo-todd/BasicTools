@@ -1,4 +1,3 @@
-import wave
 import os
 import numpy as np
 import scipy.signal as dsp_tools
@@ -14,45 +13,19 @@ def read_wav(wav_path, tar_fs=None):
     """ read wav file, implete with soundfile
     """
     wav_path = os.path.expanduser(wav_path)
-    if True:
-        x, fs = sf.read(wav_path)
-        if tar_fs is not None and tar_fs != fs:
-            x = resample(x, fs, tar_fs)
-            fs = tar_fs
-    else:
-        wav_file = wave.open(wav_path, 'r')
-        sample_num = wav_file.getnframes()
-        channel_num = wav_file.getnchannels()
-        fs = wav_file.getframerate()
-
-        pcm_data = wav_file.readframes(sample_num)
-        x = np.fromstring(pcm_data, np.int16)/(2.0**15)
-        x = x.reshape([-1, channel_num])
-        wav_file.close()
-
+    x, fs = sf.read(wav_path)
+    if tar_fs is not None and tar_fs != fs:
+        x = resample(x, fs, tar_fs)
+        fs = tar_fs
     return [x.astype(np.float32), fs]
 
 
-def write_wav(x, fs, wav_path):
+def write_wav(x, fs, wav_path, n_bit=16):
     """ write wav file,  implete with soundfile
     """
     wav_path = os.path.expanduser(wav_path)
-    if True:
-        sf.write(file=wav_path, data=x, samplerate=fs)
-    else:
-        bits_per_sample = 16
-        samples = np.asarray(x*(2**(bits_per_sample)), dtype=np.int16)
-        sample_num = samples.shape[0]
-        if samples.ndim > 1:
-            channel_num = samples.shape[1]
-        else:
-            channel_num = 1
-
-        wav_file = wave.open(wav_path, 'w')
-        wav_file.setparams((channel_num, 2, fs, sample_num, 'NONE',
-                            'not compressed'))
-        wav_file.writeframes(samples.tostring())
-        wav_file.close()
+    subtype = f'PCM_{n_bit}'
+    sf.write(file=wav_path, data=x, samplerate=fs, subtype=subtype)
 
 
 def resample(x, orig_fs, tar_fs):

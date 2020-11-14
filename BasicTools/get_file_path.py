@@ -1,7 +1,9 @@
 import os
 
 
-def get_realpath(file_path, root_dir):
+def _get_realpath(file_path, root_dir):
+    """only for real file not link
+    """
     realpath = os.path.realpath(
         os.path.expanduser(file_path))
     if root_dir is not None:
@@ -16,6 +18,20 @@ def get_realpath(file_path, root_dir):
         else:
             print(f'{realpath} do not in {root_dir}, realpath is returned')
     return realpath.replace('//', '/')
+
+
+def get_realpath(file_path, root_dir):
+    """ allow file_path as real file or link
+    """
+    if os.path.islink(file_path):
+        # if file_path if a link, keep the link name unchanged, expand its
+        # directory
+        file_dir = _get_realpath(os.path.dirname(file_path), root_dir)
+        file_name = os.path.basename(file_path)
+        file_realpath = '/'.join((file_dir, file_name))
+    else:
+        file_realpath = _get_realpath(file_path, root_dir)
+    return file_realpath
 
 
 def get_file_path(dir_path, suffix=None, filter_func=None,

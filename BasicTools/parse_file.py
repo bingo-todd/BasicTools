@@ -1,40 +1,51 @@
 import os
+import numpy as np
 
 
-def parse_value_str(value_str, dtype):
-    items = [[dtype(x) for x in item.strip().split()]
-             for item in value_str.strip().split(';')]
-    return items
-
-
-def file2dict(file_path, dtype=None):
+def file2dict(file_path, numeric=False, repeat_processor=None):
     """parse file to dictionary
     the content of file should in the following format
-    key: item0; item1, ...
+    key: value   # value should be in the format: item0; item1, ...
     ....
     Args:
         file_path:
-        dtype: if not specified, the value string will not be parsed further
+        numeric: bool, whether items are array of numbers.
+            if True, value will be parsed to numpy 2d array
+        repeat_processor: how to deal with repeat keys
+            choices ['keep', 'none']  'average not implemented
+    Returns:
+        a dict object
     """
-    file_path = os.path.expanduser(file_path)
+    file_path = os.path.expanduser(file_path)  #
+
     dict_obj = {}
     with open(file_path, 'r') as dict_file:
         lines = dict_file.readlines()
         for line_i, line in enumerate(lines):
             try:
                 line = line.strip()
-                if len(line) < 1:
-                    continue
-                if line.startswith('#'):
+                if len(line) < 1 or line.startswith('#'):
                     continue
 
                 key, value = line.split(':')
-                key, value = key.strip(), value.strip()
-                if dtype is not None:
-                    value = parse_value_str(value, dtype)
-                if key in dict_obj.keys():
-                    raise Exception('duplicate key')
-                dict_obj[key] = value
+                key = key.strip()
+                value = value.strip()
+                if numeric:
+                    value = np.asarray(
+                        [[float(item) for item in row.split()]
+                         for row in value.split(';')])
+
+                if repeat_processor == 'keep':
+                    # keep values of key in a list
+                    if key in dict_obj.keys():
+                        dict_obj[key].append(value)
+                    else:
+                        dict_obj[key] = [value]
+                else:
+                    if key in dict_obj.keys():
+                        raise Exception('duplicate key')
+                    else:
+                        dict_obj[key] = value
             except Exception as e:
                 print(f'error in {file_path} line:{line_i}')
                 raise Exception(e)
@@ -50,22 +61,31 @@ def iterable(obj):
         return True
 
 
-def dict2file(file_path, dict_obj, item_format='', is_sort=True):
+def dict2file(dict_obj, file_path, item_format='', is_sort=True):
     file_path = os.path.expanduser(file_path)
 
     keys = list(dict_obj.keys())
     if is_sort:
         keys.sort()
 
-    with open(file_path, 'w') as dict_file:
+    with open(file_path, 'x') as dict_file:
         for key in keys:
             if isinstance(dict_obj[key], str):
                 value_str = dict_obj[key]
             elif iterable(dict_obj[key]):
-                value_str = '; '.join(
-                    map(
-                        lambda x: ('{:'+item_format+'}').format(x),
-                        dict_obj[key]))
+                if iterable(dict_obj[key][0]):
+                    # 2 dimension
+                    value_str = '; '.join([
+                        ' '.join(
+                            map(lambda x: ('{:'+item_format+'}').format(x),
+                                row))
+                        for row in dict_obj[key]])
+                else:
+                    # 1 dimension
+                    value_str = '; '.join(
+                        map(lambda x: ('{:'+item_format+'}').format(x),
+                            dict_obj[key]))
+
             else:
                 value_str = f'{dict_obj[key]}'
             dict_file.write(f'{key}: {value_str}\n')

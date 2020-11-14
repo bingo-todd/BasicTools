@@ -24,6 +24,11 @@ class ProcessBar(object):
         return n_col_bar
 
     def update(self, text=''):
+        if self.n_line_pre > 0:
+            print(f'\033[{self.n_line_pre+1}A')  # move to start position
+            [print('\033[K') for _ in range(self.n_line_pre)]
+            print(f'\033[{self.n_line_pre+1}A')  # move to start position
+
         self.value = self.value + 1
         p = np.float32(self.value)/self.max_value
         n_col_bar = self._get_n_col_bar()
@@ -31,13 +36,8 @@ class ProcessBar(object):
         n_left = n_col_bar - n_finish
         bar_str = f"{n_finish*'>'}{n_left*'='}"
         bar_status_str = f'[{bar_str}] {p*100:>3.0f}% \n {text}'
-        n_line = bar_status_str.count('\n')+1
-        if self.n_line_pre > 0:
-            [print('\033[K') for _ in range(self.n_line_pre)]
-            print(f'\033[{self.n_line_pre+1}A')  # move to start position
         print(bar_status_str)
-        print(f'\033[{n_line+1}A')  # move to start position
-        self.n_line_pre = n_line
+        self.n_line_pre = bar_status_str.count('\n')+1
 
 
 if __name__ == '__main__':

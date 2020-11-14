@@ -72,7 +72,7 @@ def imshow(Z, ax=None, x_lim=None, y_lim=None, vmin=None, vmax=None, **kwargs):
 
 
 def plot_confuse_matrix(cm, classes=None, normalize=True,
-                        title='Confusion matrix', cmap=plt.cm.Blues):
+                        title='', cmap=plt.cm.Blues):
     """
     This function prints and plots the confusion matrix.
     Normalization can be applied by setting `normalize=True`.
@@ -98,8 +98,8 @@ def plot_confuse_matrix(cm, classes=None, normalize=True,
         plt.text(j, i, format(cm[i, j], fmt),
                  horizontalalignment="center",
                  color="white" if cm[i, j] > thresh else "black")
-    plt.ylabel('True label')
-    plt.xlabel('Predicted label')
+    plt.ylabel('Grandtruth')
+    plt.xlabel('Estimation')
     return fig, ax
 
 
@@ -213,6 +213,7 @@ def plot_wav_spec(wav, fs=None, ax_wav=None, label=None,
             print('ax_spec is not specified, spec will not be plot')
 
     ax_wav.plot(t_tick_wav, wav, label=label)
+    ax_wav.set_xlim([t_tick_wav[0], t_tick_wav[-1]])
     ax_wav.set_xlabel(t_label)
     ax_wav.set_ylim((-amp_max, amp_max))
 
