@@ -1,45 +1,29 @@
 import os
 
 
-def _get_realpath(file_path, root_dir):
-    """only for real file not link
-    """
-    realpath = os.path.realpath(
-        os.path.expanduser(file_path))
-    if root_dir is not None:
-        root_dir_tmp = os.path.expanduser(root_dir)
-        if os.path.islink(root_dir_tmp):
-            root_dir_tmp = os.readlink(root_dir_tmp)
-            root_dir_tmp = os.path.expanduser(root_dir_tmp)
-
-        len_tmp = len(root_dir_tmp)
-        if realpath[:len_tmp] == root_dir_tmp[:len_tmp]:
-            realpath = f'{root_dir}/{realpath[len_tmp:]}'
-        else:
-            print(f'{realpath} do not in {root_dir}, realpath is returned')
-    return realpath.replace('//', '/')
-
-
-def get_realpath(file_path, root_dir):
-    """ allow file_path as real file or link
+def get_realpath(file_path):
+    """ if file_path is a link, the real path of this link rather than the
+    file the link refers is returned
     """
     if os.path.islink(file_path):
-        # if file_path if a link, keep the link name unchanged, expand its
-        # directory
-        file_dir = _get_realpath(os.path.dirname(file_path), root_dir)
         file_name = os.path.basename(file_path)
-        file_realpath = '/'.join((file_dir, file_name))
+        dir_path = os.path.dirname(file_path)
+        realpath = file_name
+        while os.path.islink(dir_path):
+            dir_name = os.path.basename(dir_path)
+            realpath = f'{dir_name}/{realpath}'
+            dir_path = os.path.dirname(dir_path)
+        realpath = f'{dir_path}/{realpath}'
     else:
-        file_realpath = _get_realpath(file_path, root_dir)
-    return file_realpath
+        realpath = os.path.realpath(file_path)
+    return realpath
 
 
-def get_file_path(dir_path, suffix=None, filter_func=None,
-                  is_absolute=False, root_dir=None):
-    """
+def get_file_path(dir_path, suffix=None, filter_func=None, is_absolute=False):
+    """ return a list of file paths
     """
     if filter_func is None:
-        filter_func = lambda x: True
+        filter_func = lambda x: True  # noqa E731
 
     file_relpath_all = []
     for file_dir, _, file_names in os.walk(dir_path):
@@ -51,7 +35,7 @@ def get_file_path(dir_path, suffix=None, filter_func=None,
                     file_relpath_all.append(file_relpath)
 
     if is_absolute:
-        file_realpath_all = [get_realpath(file_relpath, root_dir)
+        file_realpath_all = [get_realpath(file_relpath)
                              for file_relpath in file_relpath_all]
         return file_realpath_all
     else:

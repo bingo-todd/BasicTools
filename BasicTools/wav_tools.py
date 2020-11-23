@@ -69,12 +69,12 @@ def cal_power(x):
     return power
 
 
-def frame_data(x, frame_len, shift_len):
+def frame_data(x, frame_len, frame_shift):
     """parse data into frames
     Args:
         x: single/multiple channel data
         frame_len: frame length in sample
-        shift_len: shift_len in sample
+        frame_shift: frame_shift in sample
     Returns:
         [n_frame,frame_len,n_chann]
     """
@@ -91,10 +91,10 @@ def frame_data(x, frame_len, shift_len):
         x = x[:, np.newaxis]
 
     n_sample, *sample_shape = x.shape
-    n_frame = np.int(np.floor(np.float32(n_sample-frame_len)/shift_len)+1)
+    n_frame = np.int(np.floor(np.float32(n_sample-frame_len)/frame_shift)+1)
     frame_all = np.zeros((n_frame, frame_len, *sample_shape))
     for frame_i in range(n_frame):
-        frame_slice = slice(frame_i*shift_len, frame_i*shift_len+frame_len)
+        frame_slice = slice(frame_i*frame_shift, frame_i*frame_shift+frame_len)
         frame_all[frame_i] = x[frame_slice]
 
     if n_dim == 1:
@@ -126,7 +126,7 @@ def _cal_snr(tar, inter):
     return snr
 
 
-def cal_snr(tar, inter, frame_len=None, shift_len=None, is_plot=None):
+def cal_snr(tar, inter, frame_len=None, frame_shift=None, is_plot=None):
     """Calculate snr of entire signal, frames if frame_len is
     specified.
                 snr = 10log10(power_tar/power_inter)
@@ -134,16 +134,21 @@ def cal_snr(tar, inter, frame_len=None, shift_len=None, is_plot=None):
         tar: target signal, single channel
         inter: interfere signal, single channel
         frame_len:
-        shift_len: if not specified, set to frame_len/2
+        frame_shift: if not specified, set to frame_len/2
         if_plot: whether to plot snr of each frames, default to None
     Returns:
         float number or numpy.ndarray
     """
+    
+    # single channel 
+    if len(tar.shape) > 1 or len(inter.shape) > 1:
+        raise Exception('input should be single channel')
+        
     if frame_len is None:
         snr = _cal_snr(tar, inter)
     else:
-        if shift_len is None:
-            shift_len = np.int16(frame_len/2)
+        if frame_shift is None:
+            frame_shift = np.int16(frame_len/2)
 
         # signal length check
         if tar.shape[0] != inter.shape[0]:
@@ -151,8 +156,8 @@ def cal_snr(tar, inter, frame_len=None, shift_len=None, is_plot=None):
                              tar:{}, inter:{}'.format(tar.shape[0],
                                                       inter.shape[0]))
 
-        frame_all_tar = frame_data(tar, frame_len, shift_len)
-        frame_all_inter = frame_data(inter, frame_len, shift_len)
+        frame_all_tar = frame_data(tar, frame_len, frame_shift)
+        frame_all_inter = frame_data(inter, frame_len, frame_shift)
         n_frame = frame_all_tar.shape[0]
         snr = np.asarray([_cal_snr(frame_all_tar[i],
                                    frame_all_inter[i])
@@ -173,7 +178,7 @@ def cal_snr(tar, inter, frame_len=None, shift_len=None, is_plot=None):
             ax2 = ax1.twinx()
             ax2.set_ylabel('snr(dB)')
             # time: center of frame
-            frame_t_all = np.arange(n_frame)*shift_len+np.int16(frame_len/2)
+            frame_t_all = np.arange(n_frame)*frame_shift+np.int16(frame_len/2)
             ax2.plot(frame_t_all, snr, color='red', linewidth=2,
                      label='snr')
             ax2.legend(loc='upper right')

@@ -21,13 +21,15 @@ def _cal_gcc_phat(x1, x2, max_delay, win_f, snr_thd):
     gcc_fft_amp = np.abs(gcc_fft)
 
     # clip small value to zeros
-    eps = np.max(gcc_fft_amp)*(10**(snr_thd/10))
+    eps = 1e-10  # np.max(gcc_fft_amp)*(10**(snr_thd/10))
     gcc_fft[gcc_fft_amp < eps] = 0
     gcc_fft_amp[gcc_fft_amp < eps] = eps
 
     # phase transform
-    gcc_phat_raw = np.real(np.fft.ifft(np.divide(gcc_fft, gcc_fft_amp),
-                                       gcc_len))
+    gcc_phat_raw = np.real(
+        np.fft.ifft(
+            np.divide(gcc_fft, gcc_fft_amp),
+            gcc_len))
     #
     gcc_phat = np.concatenate((gcc_phat_raw[-max_delay:],
                                gcc_phat_raw[:max_delay+1]))
