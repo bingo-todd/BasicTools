@@ -32,7 +32,7 @@ def file2dict(file_path, numeric=False, repeat_processor=None):
                 value = value.strip()
                 if numeric:
                     value = np.asarray(
-                        [[float(item) for item in row.split()]
+                        [[np.float32(item) for item in row.split()]
                          for row in value.split(';')])
 
                 if repeat_processor == 'keep':
