@@ -54,6 +54,9 @@ def worker(func, lock, tasks_queue, outputs_dict, pb, worker_params,
                         if pid != cur_pid:
                             os.system(f'kill {pid} > /dev/null')
                 os.system(f'kill {father_pid} > /dev/null')
+
+                # rerun to show more information absout exception
+                result = func(*task[1:], *worker_params)
                 return None
 
             with lock:
@@ -80,6 +83,10 @@ def easy_parallel(func, tasks, n_worker=8, show_process=False,
 
     if isinstance(tasks, np.ndarray):
         tasks = tasks.tolist()
+
+    # avoid n_worker is too large for current machine
+    n_worker_max = len(list(os.sched_getaffinity(0)))
+    n_worker = np.min((n_worker, n_worker_max))
 
     threads = []
     outputs_dict = Manager().dict()

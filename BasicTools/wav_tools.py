@@ -63,8 +63,9 @@ def brir_filter(x, brir):
 def cal_power(x):
     """calculate the engergy of given signal
     """
-    theta = x.max()/1e5
-    x_len = np.count_nonzero(x > theta)
+    x_amp = np.abs(x)
+    amp_theta = np.max(x_amp)/1e5
+    x_len = np.count_nonzero(x_amp > amp_theta)
     power = np.sum(np.square(x))/x_len
     return power
 
@@ -122,7 +123,7 @@ def _cal_snr(tar, inter):
     """sub-function of cal_snr"""
     power_tar = cal_power(tar)
     power_inter = cal_power(inter)
-    snr = 10*np.log10(power_tar/power_inter)
+    snr = 10*np.log10(power_tar/power_inter+1e-20)
     return snr
 
 
@@ -139,11 +140,11 @@ def cal_snr(tar, inter, frame_len=None, frame_shift=None, is_plot=None):
     Returns:
         float number or numpy.ndarray
     """
-    
-    # single channel 
+
+    # single channel
     if len(tar.shape) > 1 or len(inter.shape) > 1:
         raise Exception('input should be single channel')
-        
+
     if frame_len is None:
         snr = _cal_snr(tar, inter)
     else:
