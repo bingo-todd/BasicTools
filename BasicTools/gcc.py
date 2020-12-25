@@ -1,7 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
-# from matplotlib import cm
-from . import wav_tools, plot_tools
 
 
 def _cal_gcc_phat(x1, x2, max_delay, win_f, snr_thd):
@@ -134,84 +131,96 @@ def cal_ccf(x1, x2, max_delay=None, frame_len=None, shift_len=None,
     return ccf
 
 
-# ccfs = cal_ccf(wav[:,0],wav[:,1],frame_len=frame_len,max_delay=max_delay)
-def test_plot(*pairs):
+def cal_corr_coef(x1, x2, max_delay=None):
+    """ calculate the correlation coefficients
+    """
 
-    n_Z = len(pairs)
-    # print(z_min,z_max)
+    x1_len = x1.shape[0]
+    x2_len = x2.shape[0]
 
-    # norm range for Z1 and Z2
+    x1_power = x1**2
+    x2_power = x2**2
 
-    fig = plt.figure(figsize=[4*n_Z, 4])
-    for i, ele in enumerate(pairs):
-        z_min = np.min(ele[1])
-        z_max = np.max(ele[1])
-        ax = fig.add_subplot(1, n_Z, i+1)  # projection='3d')
-        plot_tools.imshow(Z=(ele[1]-z_min)/(z_max-z_min),
-                          ax=ax, vmin=0, vmax=1)
-        ax.set_title(ele[0])
-        ax.set_xlabel('Frame')
-        ax.set_ylabel('Delay(sample)')
+    if max_delay is None:
+        max_delay = x1_len+x2_len-1
+    n_delay = 2*max_delay+1
+    corr_coef = np.zeros(n_delay)
+    for i, delay in enumerate(range(-max_delay, max_delay+1)):
+        if delay < 0:
+            x1_valid_len = x1_len
+            x2_valid_len = x2_len+delay
+            x_valid_len = np.min([x1_valid_len, x2_valid_len])
+            x1_slice = slice(0, x_valid_len)
+            x2_slice = slice(-delay, -delay+x_valid_len)
+        if delay > 0:
+            x1_valid_len = x1_len-delay
+            x2_valid_len = x2_len
+            x_valid_len = np.min([x1_valid_len, x2_valid_len])
+            x1_slice = slice(delay, delay+x_valid_len)
+            x2_slice = slice(0, x_valid_len)
 
-    plt.colorbar(ax.images[0])
+        corr_coef[i] = (np.sum(x1[x1_slice]*x2[x2_slice])
+                        / np.sqrt(np.sum(x1_power[x1_slice])
+                                  * np.sum(x2_power[x2_slice])))
+    return corr_coef
 
-    return fig
+
+def test_corr_coef(max_delay=18):
+    """
+    """
+    wav_path = '../examples/data/binaural_pos4.wav'
+    wav, fs = wav_tools.read_wav(wav_path)
+
+    corr_coef = cal_corr_coef(wav[:, 0], wav[:, 1], max_delay=max_delay)
+
+    fig, ax = plt.subplots(1, 1)
+    ax.plot(range(-max_delay, max_delay+1), corr_coef)
+    fig.savefig('../examples/images/ccf/corr_coef_eg.png')
 
 
-def test(frame_len=320, max_delay=18):
+def test_ccf_phat(frame_len=320, max_delay=18):
     """Test the effect of different window function, rect vs hanning
     snr_thd:default,-50
     """
-    wav_path = 'resource/binaural_pos4.wav'
-    wav, fs = wav_tools.wav_read(wav_path)
+    wav_path = '../examples/data/binaural_pos4.wav'
+    wav, fs = wav_tools.read_wav(wav_path)
 
     gcc_phat_rect = cal_gcc_phat(wav[:, 0], wav[:, 1], frame_len=frame_len,
                                  win_f=np.ones, max_delay=max_delay)
     gcc_phat_hanning = cal_gcc_phat(wav[:, 0], wav[:, 1], frame_len=frame_len,
                                     win_f=np.hanning, max_delay=max_delay)
-
-    fig = test_plot(['rect', gcc_phat_rect],
-                    ['hanning', gcc_phat_hanning])
-    plot_tools.savefig(fig, name='diff_window', dir='images/ccf')
+    fig, ax = plt.subplots(1, 1)
+    ax.plot(gcc_phat_rect, label='rect')
+    ax.plot(gcc_phat_hanning, label='hanning')
+    ax.legend()
+    fig.savefig('../examples/images/ccf/ccf_phat_diff_window.png')
 
 
 def test_ccf():
-    x = np.random.normal(0, 1, size=2048)
-    # frame_len = 320
-    # shift_len = 160
-    x_len = x.shape[0]
-    ccf_fft = cal_ccf(x, x, max_delay=44)
-    print(ccf_fft.shape)
-    ccf_ref = np.correlate(x, x, mode='full')[x_len-1-44:x_len+44]
-    print(ccf_ref.shape)
+
+    max_delay = 44
+
+    wav_path = '../examples/data/binaural_pos4.wav'
+    wav, fs = wav_tools.read_wav(wav_path)
+    wav_len = wav.shape[0]
+
+    ccf_fft = cal_ccf(wav[:, 0], wav[:, 1], max_delay=max_delay)
+
+    ccf_ref = np.correlate(wav[:, 0], wav[:, 1], mode='full')
+    ccf_ref = ccf_ref[wav_len-1-max_delay:wav_len+max_delay]
 
     fig, ax = plt.subplots(1, 1)
-    ax.plot(ccf_fft, label='ccf_fft')
-    print(np.argmax(ccf_fft))
-
-    ax.plot(ccf_ref, label='ccf_ref')
-    print(np.argmax(ccf_ref))
-
+    t = np.arange(-max_delay, max_delay+1)
+    ax.plot(t, ccf_fft, label='ccf_fft')
+    ax.plot(t, ccf_ref, label='ccf_ref')
     ax.legend()
-    plt.show()
-    plot_tools.savefig(fig, fig_name='ccf_compare.png',
-                       fig_dir='../images/ccf')
+    fig.savefig('../examples/images/ccf/ccf_compare.png')
 
 
 if __name__ == '__main__':
-    # wav_path = 'resource/binaural_pos4.wav'
-    # frame_dur = 20e-3
-    # max_delay = 18
-    #
-    # wav,fs = wav_tools.wav_read(wav_path)
-    # frame_len = np.int16(frame_dur*fs)
-    #
-    # ccfs = cal_ccf(wav[:,0],wav[:,1],frame_len=frame_len,
-    #                max_delay=max_delay,win_f=np.hanning)
-    # fig,ax = plt.subplots(1,1)
-    # ax.plot(ccfs.T)
-    # ax.set_xlabel('Delay(sample)')
-    # ax.set_title('ccfs')
-    # plot_tools.savefig(fig,fig_name='ccf',fig_dir='images/ccf')
+    import matplotlib.pyplot as plt
+    # from matplotlib import cm
+    from BasicTools import wav_tools
+    # from . import wav_tools
 
     test_ccf()

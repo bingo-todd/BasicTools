@@ -2,7 +2,7 @@ import os
 import numpy as np
 
 
-def file2dict(file_path, numeric=False, repeat_processor=None):
+def file2dict(file_path, numeric=False, squeeze=False, repeat_processor=None):
     """parse file to dictionary
     the content of file should in the following format
     key: value   # value should be in the format: item0; item1, ...
@@ -34,6 +34,8 @@ def file2dict(file_path, numeric=False, repeat_processor=None):
                     value = np.asarray(
                         [[np.float32(item) for item in row.split()]
                          for row in value.split(';')])
+                    if squeeze:
+                        value = np.squeeze(value)
 
                 if repeat_processor == 'keep':
                     # keep values of key in a list

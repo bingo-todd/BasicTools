@@ -39,7 +39,8 @@ def file_path_filter(file_path, suffix, filter_func):
     if suffix is None and filter_func is None:
         is_keep = True
     elif suffix is not None:
-        is_keep = os.path.basename(file_path).split('.') == suffix
+        is_keep = \
+            os.path.basename(file_path).split('.')[-1] == suffix.split('.')[-1]
         if is_keep and filter_func is not None:
             is_keep = filter_func(file_path)
     return is_keep
@@ -59,7 +60,7 @@ def get_file_path(dir_path, suffix=None, filter_func=None, is_absolute=False,
         file_paths_raw = []
         for file_dir_path, _, file_names in os.walk(dir_path):
             depth = get_path_depth(os.path.relpath(file_dir_path, dir_path))
-            if depth > max_depth:  #
+            if max_depth > 0 and depth > max_depth:  #
                 continue
             file_paths_raw.extend(
                 [f'{file_dir_path}/{file_name}' for file_name in file_names])
