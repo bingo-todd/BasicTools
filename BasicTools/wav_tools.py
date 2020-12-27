@@ -28,7 +28,7 @@ def write_wav(x, fs, wav_path, n_bit=16):
     sf.write(file=wav_path, data=x, samplerate=fs, subtype=subtype)
 
 
-def resample(x, orig_fs, tar_fs):
+def resample(x, orig_fs, tar_fs, axis=0):
     """ resample signal, implete with librosa
     Args:
         x: signal, resampling in the first dimension
@@ -37,8 +37,16 @@ def resample(x, orig_fs, tar_fs):
     Returns:
         resampled data
     """
-    x_result = librosa.resample(x.T, orig_fs, tar_fs)
-    return x_result.T
+    if len(x.shape) > 2:
+        raise Exception('only 1d and 2d array are supported')
+    elif len(x.shape) == 2:
+        x = x.T  # the fist dimension represent channels
+
+    #
+    x = np.asfortranarray(x)
+    x_resampled = librosa.resample(x, orig_fs, tar_fs)
+    x_resampled = x_resampled.T
+    return x_resampled
 
 
 def brir_filter(x, brir):
