@@ -2,18 +2,20 @@ import numpy as np
 
 
 class Iterator:
-    def __init__(self, x, _n_repeat=1):
+    def __init__(self, x, n_repeat=1):
         """ x: list or ndarray
         """
 
         if isinstance(x, list):
-            _n_item = len(x)
+            n_item = len(x)
         elif isinstance(x, np.ndarray):
-            _n_item = x.shape[0]
+            n_item = x.shape[0]
+        else:
+            raise Exception(f'unsupported type {type(x)}')
 
         self.x = x
-        self._n_repeat = _n_repeat
-        self._n_item = _n_item
+        self._n_repeat = n_repeat
+        self._n_item = n_item
         self._item_counter = 0
         self._repeat_counter = 0
 
@@ -39,3 +41,12 @@ class Iterator:
     def reset(self):
         self._item_counter = 0
         self._repeat_counter = 0
+
+
+if __name__ == '__main__':
+    generator = Iterator([1, 2, 3, 4, 5])
+    while True:
+        value = generator.next()
+        print(value)
+        if value is None:
+            break

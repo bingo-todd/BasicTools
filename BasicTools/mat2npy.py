@@ -5,14 +5,20 @@ import numpy as np
 import argparse
 
 
-def mat2npy(mat_path, npy_path):
+def mat2npy(mat_path, npy_path=None):
+
+    if npy_path is None:
+        npy_path = (mat_path.split('.mat')[0] + '.npy')
 
     if os.path.exists(npy_path):
         raise Exception(f'{npy_path} already exists')
 
     try:
         mat_obj = sio.loadmat(mat_path)
-        raise Exception('not finished')
+        keys = list(mat_obj.keys())
+        if len(keys) > 4:
+            raise Exception(f'multiple variales in {mat_path}')
+        data = np.asarray(mat_obj[keys[3]])
     except Exception:
         mat_obj = h5py.File(mat_path, mode='r')
         keys = list(mat_obj.keys())
@@ -24,9 +30,9 @@ def mat2npy(mat_path, npy_path):
 
 def parse_args():
     parser = argparse.ArgumentParser(description='parse argments')
-    parser.add_argument('--mat-path', dest='mat_path', required=True, type=str,
+    parser.add_argument('--mat', dest='mat_path', required=True, type=str,
                         help='')
-    parser.add_argument('--npy-path', dest='npy_path', required=True, type=str,
+    parser.add_argument('--npy', dest='npy_path', type=str, default=None,
                         help='')
     args = parser.parse_args()
     return args
