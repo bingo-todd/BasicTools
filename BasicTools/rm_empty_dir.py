@@ -17,15 +17,18 @@ def rm_empty_dir(dir_path):
                 sub_dir_path = f'{root}/{sub_dir_name}'
                 if is_dir_empty(sub_dir_path):
                     os.rmdir(sub_dir_path)
+                    print(sub_dir_path)
                     is_done = False
             if not is_done:
                 break
     if is_dir_empty(dir_path):
         os.rmdir(dir_path)
+        print(dir_path)
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description='parse argments')
+    parser = argparse.ArgumentParser(description='remove empty directories \
+                                     recursively')
     parser.add_argument('--dir', dest='dir_path', required=True, type=str,
                         help='')
     args = parser.parse_args()

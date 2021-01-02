@@ -14,7 +14,7 @@ def expand_dirs(dir_paths):
     return sub_dir_paths
 
 
-def modify_dir_path(dir_path, src_pattern, dest_pattern, max_try=-1):
+def modify_path(dir_path, src_pattern, dest_pattern, max_try=-1):
     #
     src_pattern = src_pattern.strip('/')
     src_pattern_len = len(src_pattern)
@@ -34,7 +34,7 @@ def modify_dir_path(dir_path, src_pattern, dest_pattern, max_try=-1):
                 if os.path.exists(dest_path):
                     raise Exception(f'{dest_path} alread exists')
                 #
-                is_continue = input(f'move {src_path} to ${dest_path} ?y/n')
+                is_continue = input(f'move {src_path} to ${dest_path} ? y/n ')
                 if is_continue == '' or is_continue == 'y':
                     shutil.move(src_path, dest_path)
                     n_try = n_try+1
@@ -63,10 +63,10 @@ def parse_args():
 def main():
     args = parse_args()
 
-    modify_dir_path(dir_path=args.dir_path,
-                    src_pattern=args.src_pattern,
-                    dest_pattern=args.dest_pattern,
-                    max_try=args.max_try)
+    modify_path(dir_path=args.dir_path,
+                src_pattern=args.src_pattern,
+                dest_pattern=args.dest_pattern,
+                max_try=args.max_try)
 
 
 if __name__ == '__main__':
