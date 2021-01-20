@@ -107,14 +107,22 @@ def plot_surf(Z, X=None, Y=None, ax=None, **kwargs):
     m, n = Z.shape
     if X is None and Y is None:
         X, Y = np.meshgrid(np.arange(n), np.arange(m))
+    else:
+        X, Y = np.asarray(X), np.asarray(Y)
+        if len(X.shape) < 2:
+            X, Y = np.meshgrid(X, Y)
 
     basic_settings = {'cmap': cm.coolwarm}
     basic_settings.update(kwargs)
 
     if ax is None:
-        fig, ax = plt.subplots(1, 1, 1, projection='3d')
-    ax.plot_surface(X, Y, Z, **basic_settings)
-    return ax
+        fig, ax = plt.subplots(subplot_kw={'projection': '3d'})
+    else:
+        fig = None
+    surf = ax.plot_surface(X, Y, Z, **basic_settings)
+    if fig is not None:
+        fig.colorbar(surf, shrink=0.6)
+    return fig, ax
 
 
 def plot_bar(*mean_std, legend=None, **kwargs):
