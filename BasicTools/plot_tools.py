@@ -180,9 +180,8 @@ def break_plot():
     savefig(fig, 'break_axis')
 
 
-def plot_wav_spec(wav, fs=None, ax_wav=None, label=None,
-                  is_plot_spec=True, ax_specgram=None, ax_spec=None,
-                  frame_len=1024, shift_len=512, yscale='mel', amp_max=None):
+def plot_wav(wav, fs=None, label=None, ax_wav=None, ax_specgram=None,
+             frame_len=1024, frame_shift=512, yscale='mel', amp_max=None):
     """plot spectrogram of given len
     Args:
     """
@@ -192,10 +191,10 @@ def plot_wav_spec(wav, fs=None, ax_wav=None, label=None,
         amp_max = np.max(np.abs(wav))
 
     stft_params = {'frame_len': frame_len,
-                   'shift_len': shift_len,
+                   'shift_len': frame_shift,
                    'fs': fs}
     n_sample = wav.shape[0]
-    n_frame = np.int(np.floor(np.float32(n_sample-frame_len)/shift_len)+1)
+    n_frame = np.int(np.floor(np.float32(n_sample-frame_len)/frame_shift)+1)
     n_bin = int(frame_len/2)
 
     if fs is None:
@@ -208,44 +207,37 @@ def plot_wav_spec(wav, fs=None, ax_wav=None, label=None,
         t_label = 'time(s)'
         freq_label = 'frequnecy(kHz)'
 
-    t_tick_wav = np.arange(n_sample)/fs
-    if ax_wav is None:
-        if is_plot_spec:
-            fig, ax = plt.subplots(2, 1)
-            ax_wav, ax_specgram, ax_spec = ax
-        else:
-            fig, ax_wav = plt.subplots(2, 1)
-    else:
-        fig = None
-        if is_plot_spec and ax_spec is None:
-            print('ax_spec is not specified, spec will not be plot')
+    fig = None
+    # if ax_wav and ax_specgram are not specified
+    if ax_wav is None and ax_specgram is None:
+        fig, ax = plt.subplots(2, 1)
+        ax_wav, ax_specgram = ax
 
-    ax_wav.plot(t_tick_wav, wav, label=label)
-    ax_wav.set_xlim([t_tick_wav[0], t_tick_wav[-1]])
-    ax_wav.set_xlabel(t_label)
-    ax_wav.set_ylim((-amp_max, amp_max))
+    if ax_wav is not None:
+        t_tick_wav = np.arange(n_sample)/fs
+        ax_wav.plot(t_tick_wav, wav, label=label)
+        ax_wav.set_xlim([t_tick_wav[0], t_tick_wav[-1]])
+        ax_wav.set_xlabel(t_label)
+        ax_wav.set_ylim((-amp_max, amp_max))
+        ax_wav.set_title(label)
 
-    if is_plot_spec and ax_spec is not None:
+    if ax_specgram is not None:
         specgram = 20*np.log10(
             np.abs(
                 fft.cal_stft(wav, **stft_params)[0]))
         max_value = np.max(specgram)
         min_value = max_value-60
         n_frame, n_bin = specgram.shape
-        t_tick = (np.arange(n_frame)+1)*shift_len/fs
+        t_tick = (np.arange(n_frame)+1)*frame_shift/fs
         freq_tick = np.arange(n_bin)/frame_len*fs/freq_norm_factor
         imshow(ax=ax_specgram, Z=specgram.T,
                x_lim=[0, t_tick[-1]], y_lim=[0, freq_tick[-1]],
                vmin=min_value, vmax=max_value, origin='lower')
         ax_specgram.set_xlabel(t_label)
         ax_specgram.set_ylabel(freq_label)
-        ax_specgram.yaxis.set_major_formatter('{x:.1f}')
+        # ax_specgram.yaxis.set_major_formatter('{x:.1f}')
         #
-        n_fft_half = int(n_sample/2)
-        freq_tick = np.arange(n_fft_half)/n_sample*fs/freq_norm_factor
-        ax_spec.plot(freq_tick, np.abs(np.fft.fft(wav)[:n_fft_half]))
-        ax_spec.set_xlabel(freq_label)
-    return fig, ax_wav, ax_specgram, ax_spec
+    return fig, ax_wav, ax_specgram
 
 
 def plot_break_axis(x1, x2):
@@ -384,8 +376,8 @@ def test_plot_wav_spec():
     x1, fs = wav_tools.wav_read('resource/tar.wav')
     x2, fs = wav_tools.wav_read('resource/inter.wav')
 
-    fig = plot_wav_spec(wav_all=[x1, x2], label_all=['tar', 'inter'], fs=fs,
-                        frame_len=1024, shift_len=512, yscale='mel')
+    fig = plot_wav(wav_all=[x1, x2], label_all=['tar', 'inter'], fs=fs,
+                   frame_len=1024, shift_len=512, yscale='mel')
     savefig(fig, name='wav_spec', dir='./images/plot_tools')
 
 

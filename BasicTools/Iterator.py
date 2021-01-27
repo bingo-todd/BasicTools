@@ -2,7 +2,7 @@ import numpy as np
 
 
 class Iterator:
-    def __init__(self, x, n_repeat=1):
+    def __init__(self, x):
         """ x: list or ndarray
         """
 
@@ -14,49 +14,34 @@ class Iterator:
             raise Exception(f'unsupported type {type(x)}')
 
         self.x = x
-        self._n_repeat = n_repeat
-        self._n_item = n_item
-        self._item_counter = 0
-        self._repeat_counter = 0
+        self._n_item = n_item  # number of elements in x
+        self._item_pointer = 0   # index of element avaliable new
+        self._repeat_pointer = 0  # cycle index counter
 
     def is_done(self, n_keep=0):
         """ whether there are n_keep item left
         """
-        return (self._repeat_counter == self._n_repeat-1
-                and self._item_counter == self._n_item-n_keep)
+        return self._item_pointer == self._n_item-1-n_keep
 
     def next(self):
-        """
+        """ get next element, None will return if reach the end
         """
         if self.is_done():
             item = None
         else:
-            item = self.x[self._item_counter]
-            self._item_counter = self._item_counter + 1
-            if (self._item_counter == self._n_item
-                    and self._repeat_counter < self._n_repeat-1):
-                self._item_counter = 0
-                self._repeat_counter = self._repeat_counter+1
+            item = self.x[self._item_pointer]
+            self._item_pointer = self._item_pointer + 1
         return item
 
     def go_back(self, n_step):
+        """ move _item_pointer backwards
         """
-        """
-        if n_step >= self._n_item:
-            raise Exception(f'too many steps go back: {n_step}')
-
-        if self._item_counter > n_step:
-            self._item_counter -= n_step
-        else:
-            if self._repeat_counter > 0:
-                self._repeat_counter -= 1
-                self._item_counter = self._n_item-(n_step-self._item_counter)
-            else:
-                raise Exception(f'too many steps go back: {n_step}')
+        if n_step >= self._item_pointer:
+            raise Exception(f'n_step illegal: {n_step}')
+        self._item_pointer -= n_step
 
     def reset(self):
-        self._item_counter = 0
-        self._repeat_counter = 0
+        self._item_pointer = 0
 
 
 if __name__ == '__main__':
