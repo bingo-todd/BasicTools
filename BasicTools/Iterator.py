@@ -2,7 +2,7 @@ import numpy as np
 
 
 class Iterator:
-    def __init__(self, x):
+    def __init__(self, x, shuffle=False):
         """ x: list or ndarray
         """
 
@@ -14,9 +14,11 @@ class Iterator:
             raise Exception(f'unsupported type {type(x)}')
 
         self.x = x
+        if shuffle:
+            np.random.shuffle(self.x)
+        #
         self._n_item = n_item  # number of elements in x
-        self._item_pointer = 0   # index of element avaliable new
-        self._repeat_pointer = 0  # cycle index counter
+        self._item_pointer = -1   # index of element avaliable new
 
     def is_done(self, n_keep=0):
         """ whether there are n_keep item left
@@ -29,19 +31,21 @@ class Iterator:
         if self.is_done():
             item = None
         else:
+            self._item_pointer += 1
             item = self.x[self._item_pointer]
-            self._item_pointer = self._item_pointer + 1
         return item
 
     def go_back(self, n_step):
         """ move _item_pointer backwards
         """
         if n_step >= self._item_pointer:
-            raise Exception(f'n_step illegal: {n_step}')
+            n_step = self._item_pointer+1  #
         self._item_pointer -= n_step
 
-    def reset(self):
-        self._item_pointer = 0
+    def reset(self, shuffle=False):
+        if shuffle:
+            np.random.shuffle(self.x)
+        self._item_pointer = -1
 
 
 if __name__ == '__main__':

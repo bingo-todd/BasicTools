@@ -7,7 +7,6 @@ import datetime
 from PIL import Image
 import pathlib
 from functools import wraps
-import itertools
 
 
 def line_collector(plot_func):
@@ -54,6 +53,9 @@ def plot_contour(ax, *args, is_label=False, line_container=None, **kwargs):
 def imshow(Z, ax=None, x_lim=None, y_lim=None, vmin=None, vmax=None, **kwargs):
     if ax is None:
         fig, ax = plt.subplots(1, 1)
+    else:
+        fig = None
+
     if x_lim is None or y_lim is None:
         x_lim = [0, Z.shape[1]]
         y_lim = [0, Z.shape[0]]
@@ -68,42 +70,60 @@ def imshow(Z, ax=None, x_lim=None, y_lim=None, vmin=None, vmax=None, **kwargs):
     basic_settings.update(kwargs)
 
     ax.imshow(Z_norm, extent=[*x_lim, *y_lim], **basic_settings)
-    return ax
-
-
-def plot_confuse_matrix(cm, classes=None, normalize=True,
-                        title='', cmap=plt.cm.Blues):
-    """
-    This function prints and plots the confusion matrix.
-    Normalization can be applied by setting `normalize=True`.
-    Input
-    - cm: confuse matrix
-    - classes: label of each class
-    - normalize: whether normalization
-    """
-    n_class = cm.shape[0]
-    if classes is None:
-        classes = list(map(str, range(n_class)))
-
-    fig, ax = plt.subplots(1, 1, tight_layout=True)
-    plt.imshow(cm, interpolation='nearest', cmap=cmap, vmin=0, vmax=1)
-    plt.title(title)
-    plt.colorbar()
-    tick_marks = np.arange(len(classes))
-    plt.xticks(tick_marks, classes)  # rotation=45)
-    plt.yticks(tick_marks, classes)
-    fmt = '.2f' if normalize else 'd'
-    thresh = cm.max() / 2.
-    for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
-        plt.text(j, i, format(cm[i, j], fmt),
-                 horizontalalignment="center",
-                 color="white" if cm[i, j] > thresh else "black")
-    plt.ylabel('Grandtruth')
-    plt.xlabel('Estimation')
     return fig, ax
 
 
-def plot_surf(Z, X=None, Y=None, ax=None, **kwargs):
+def plot_matrix(matrix, xlabel=None, ylabel=None, show_value=False,
+                normalize=True, vmin=None, vmax=None, aspect='auto',
+                cmap=plt.cm.coolwarm):
+    """
+    This function prints and plots matrix.
+    Normalization can be applied by setting `normalize=True`.
+    Args
+        X: matrix
+        xlabel, ylabel: labels of x-axis and y-axis
+        show_value: display the correponding values of each square of images
+        normalize: normalize Z to the range of [0, 1]
+        vmin, vmax: the min- and max values to clip Z
+        cmap: color map
+    - normalize: whether normalization
+    """
+
+    if vmin is None:
+        vmin = np.min(matrix)
+    if vmax is None:
+        vmax = np.max(matrix)
+
+    fig, ax = plt.subplots(1, 1, tight_layout=True)
+    plt.imshow(matrix, interpolation='nearest', cmap=cmap, vmin=vmin,
+               vmax=vmax, aspect=aspect)
+    plt.colorbar(shrink=0.6)
+
+    # x_axis: colum  y_axis: row
+    if show_value:
+        fmt = '.2f' if normalize else 'd'
+        thresh = matrix.max() / 2.
+        for i in range(matrix.shape[0]):
+            for j in range(matrix.shape[1]):
+                plt.text(j, i, format(matrix[i, j], fmt),
+                         horizontalalignment="center",
+                         color="white" if matrix[i, j] > thresh else "black")
+        plt.ylabel(xlabel)
+        plt.xlabel(ylabel)
+
+    tick_labels = list(map(str, range(matrix.shape[0])))
+    tick_marks = np.arange(matrix.shape[0])
+    plt.yticks(tick_marks, tick_labels)  # rotation=45)
+
+    tick_labels = list(map(str, range(matrix.shape[1])))
+    tick_marks = np.arange(matrix.shape[1])
+    plt.xticks(tick_marks, tick_labels)
+
+    return fig, ax
+
+
+def plot_surf(Z, X=None, Y=None, ax=None, xlabel=None, ylabel=None,
+              vmin=None, vmax=None, **kwargs):
     m, n = Z.shape
     if X is None and Y is None:
         X, Y = np.meshgrid(np.arange(n), np.arange(m))
@@ -111,15 +131,23 @@ def plot_surf(Z, X=None, Y=None, ax=None, **kwargs):
         X, Y = np.asarray(X), np.asarray(Y)
         if len(X.shape) < 2:
             X, Y = np.meshgrid(X, Y)
+    if vmin is None:
+        vmin = np.min(Z)
+    if vmax is None:
+        vmax = np.max(Z)
 
-    basic_settings = {'cmap': cm.coolwarm}
+    basic_settings = {'cmap': cm.coolwarm,
+                      'vmin': vmin,
+                      'vmax': vmax}
     basic_settings.update(kwargs)
 
     if ax is None:
         fig, ax = plt.subplots(subplot_kw={'projection': '3d'})
     else:
         fig = None
+
     surf = ax.plot_surface(X, Y, Z, **basic_settings)
+    ax.set_zlim((vmin, vmax))
     if fig is not None:
         fig.colorbar(surf, shrink=0.6)
     return fig, ax
@@ -281,15 +309,15 @@ def plot_break_axis(x1, x2):
     return fig
 
 
-class Gif:
-    # Gif-making class, a encapsulation of matplotlib functions
+class GIF:
+    # GIF-making class, a encapsulation of matplotlib functions
     def __init__(self):
         self.artists = []  # list of objects of line, image ...
 
     def add(self, artist):
         self.artists.append(artist)
 
-    def save(self, fpath, fig, fps=60):
+    def save(self, fig_path, fig, fps=60):
         """save to gif file
         Args:
             fpath: file path of gif
@@ -300,7 +328,7 @@ class Gif:
         """
         ani = animation.ArtistAnimation(fig, self.artists, interval=1./fps*1e3)
         # writer = animation.FFMpegWriter(fps=fps)
-        ani.save(fpath, fps=fps, writer='pillow')
+        ani.save(fig_path, fps=fps, writer='pillow')
 
 
 def savefig(fig, fig_name=None, fig_dir='./images'):
@@ -345,7 +373,7 @@ def test_bar():
 
 
 def test_gif():
-    gif = Gif()
+    gif = GIF()
     line_container = []
     fig, ax = plt.subplots(1, 1)
     for i in range(5):

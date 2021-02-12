@@ -28,7 +28,7 @@ def plot_wav(wav_path, fig_path=None, mix_channel=False, dpi=100,
 
     fig, ax = plt.subplots(2, n_col, tight_layout=True)
     if n_col == 1:
-        ax = np.repeat(ax[:, np.newaxis], axis=1)
+        ax = np.repeat(ax[:, np.newaxis], 2, axis=1)
 
     for channel_i in range(n_channel):
         plot_tools.plot_wav(wav=wav[:, channel_i],

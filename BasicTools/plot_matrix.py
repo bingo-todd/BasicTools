@@ -1,58 +1,41 @@
 import numpy as np
-import itertools
 import matplotlib.pyplot as plt
 import argparse
 
+from .plot_tools import plot_matrix
+from .plot_tools import plot_surf
 
-def plot_matrix(Z, xlabel=None, ylabel=None, show_value=False, normalize=True,
-                vmin=None, vmax=None, cmap=plt.cm.coolwarm):
-    """
-    This function prints and plots the confusion matrix.
-    Normalization can be applied by setting `normalize=True`.
-    Args
-        X: matrix
-        xlabel, ylabel: labels of x-axis and y-axis
-        show_value: display the correponding values of each square of images
-        normalize: normalize Z to the range of [0, 1]
-        vmin, vmax: the min- and max values to clip Z
-        cmap: color map
-    - normalize: whether normalization
-    """
 
-    if vmin is None:
-        vmin = np.min(Z)
-    if vmax is None:
-        vmax = np.max(Z)
+def load_matrix(matrix_path):
+    suffix = matrix_path.split('.')[-1]
+    if suffix == 'npy':
+        matrix = np.load(matrix_path)
+    elif suffix == 'txt':
+        with open(matrix_path, 'r') as file_obj:
+            lines = file_obj.readlines()
+        matrix = [[float(item) for item in line.strip().split()]
+                  for line in lines if len(line.strip()) > 0]
+        matrix = np.asarray(matrix)
+    elif suffix == 'dat':
+        with open(matrix_path, 'rb') as file_obj:
+            lines = file_obj.readlines()
+        matrix = [[float(item) for item in line.strip().split()]
+                  for line in lines if len(line.strip()) > 0]
+        matrix = np.asarray(matrix)
 
-    fig, ax = plt.subplots(1, 1, tight_layout=True)
-    plt.imshow(Z, interpolation='nearest', cmap=cmap, vmin=vmin, vmax=vmax)
-    plt.colorbar(shrink=0.6)
-
-    # x_axis: colum  y_axis: row
-    if show_value:
-        fmt = '.2f' if normalize else 'd'
-        thresh = Z.max() / 2.
-        for i, j in itertools.product(range(Z.shape[0]), range(Z.shape[1])):
-            plt.text(j, i, format(Z[i, j], fmt), horizontalalignment="center",
-                     color="white" if Z[i, j] > thresh else "black")
-        plt.ylabel(xlabel)
-        plt.xlabel(ylabel)
-
-    tick_labels = list(map(str, range(Z.shape[0])))
-    tick_marks = np.arange(Z.shape[0])
-    plt.yticks(tick_marks, tick_labels)  # rotation=45)
-
-    tick_labels = list(map(str, range(Z.shape[1])))
-    tick_marks = np.arange(Z.shape[1])
-    plt.xticks(tick_marks, tick_labels)
-
-    return fig, ax
+    return matrix
 
 
 def parse_args():
     parser = argparse.ArgumentParser(description='parse argments')
-    parser.add_argument('--npy-path', dest='npy_path', type=str, required=True,
-                        help='path of the input file')
+    parser.add_argument('--matrix-path', dest='matrix_path', type=str,
+                        required=True, help='npy, txt, dat')
+    parser.add_argument('--type', dest='type', type=str,
+                        choices=['image', 'surf'], default='image',
+                        help='')
+    parser.add_argument('--aspect', dest='aspect', type=str,
+                        choices=['equal', 'auto'], default='auto',
+                        help='')
     parser.add_argument('--vmin', dest='vmin', type=float, default=None,
                         help='')
     parser.add_argument('--vmax', dest='vmax', type=float, default=None,
@@ -67,23 +50,42 @@ def parse_args():
     parser.add_argument('--normlize', dest='normalize', type=str,
                         choices=['true', 'false'], default='false',
                         help='')
-    parser.add_argument('--fig-path', dest='fig_path', type=str, required=True,
+    parser.add_argument('--interactive', dest='interactive', type=str,
+                        choices=['true', 'false'], default='false',
+                        help='')
+    parser.add_argument('--fig-path', dest='fig_path', type=str, default=None,
                         help='')
     args = parser.parse_args()
     return args
 
 
-if __name__ == '__main__':
+def main():
     args = parse_args()
 
-    Z = np.load(args.npy_path)
+    matrix = load_matrix(args.matrix_path)
 
-    fig, ax = plot_matrix(Z,
-                          xlabel=args.xlabel,
-                          ylabel=args.ylabel,
-                          show_value=args.show_value == 'true',
-                          normalize=args.normalize == 'true',
-                          vmin=args.vmin,
-                          vmax=args.vmax)
+    if args.type == 'image':
+        fig, ax = plot_matrix(matrix,
+                              xlabel=args.xlabel,
+                              ylabel=args.ylabel,
+                              show_value=args.show_value == 'true',
+                              normalize=args.normalize == 'true',
+                              vmin=args.vmin,
+                              vmax=args.vmax,
+                              aspect=args.aspect)
+    else:
+        fig, ax = plot_surf(Z=matrix,
+                            vmin=args.vmin,
+                            vmax=args.vmax,
+                            xlabel=args.xlabel,
+                            ylabel=args.ylabel)
 
-    fig.savefig(args.fig_path)
+    if args.fig_path is not None:
+        fig.savefig(args.fig_path)
+
+    if args.interactive == 'true':
+        plt.show()
+
+
+if __name__ == '__main__':
+    main()
