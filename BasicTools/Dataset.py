@@ -3,11 +3,16 @@ import numpy as np
 
 class Dataset(object):
     def __init__(self, file_reader, file_paths, shuffle_size, batch_size,
-                 output_shapes):
+                 output_shapes, always_full_batch=False):
         self.file_reader = file_reader
 
         self.file_paths = file_paths
         np.random.shuffle(self.file_paths)
+
+        self.always_full_batch = always_full_batch
+        # ensure each batch has batch_size items
+        # if not enough items left in data_bare for a batch, items will be
+        # discared
 
         self.shuffle_size = shuffle_size
         self.batch_size = batch_size
@@ -42,7 +47,12 @@ class Dataset(object):
             self.data_bare[i] = self.data_bare[i][rand_index]
 
     def is_finish(self):
-        return self.is_finish_load() and self.data_bare[0].shape[0] == 0
+        if self.always_full_batch:
+            finish = (self.is_finish_load()
+                      and self.data_bare[0].shape[0] < self.batch_size)
+        else:
+            finish = self.is_finish_load() and self.data_bare[0].shape[0] <= 0
+        return finish
 
     def is_finish_load(self):
         return self.cur_file_i >= len(self.file_paths)

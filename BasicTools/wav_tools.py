@@ -7,6 +7,7 @@ import librosa.display
 import soundfile as sf
 
 # from . import plot_tools
+from .GPU_Filter import GPU_Filter
 
 
 def read_wav(wav_path, tar_fs=None):
@@ -214,6 +215,24 @@ def gen_wn(shape, ref=None, energy_ratio=0, power=1):
         coef = np.sqrt(power/power_orin)
         wn = wn*coef
     return wn
+
+
+def gen_diffuse_wn(brirs_path, record_path, snr, diffuse_wn_path):
+
+    gpu_filter = GPU_Filter(0)
+
+    brirs = np.load(brirs_path)
+    n_azi = brirs_path.shape[0]
+
+    record, fs = read_wav(record_path)
+    record_len = record.shape
+    diffuse_wn = np.zeros(record.shape, dtype=np.float32)
+    for azi_i in range(n_azi):
+        wn = gen_wn(record_len)
+        wn_record = gpu_filter.brir_filter(brirs[azi_i], wn)
+        diffuse_wn = diffuse_wn + wn_record
+    diffuse_wn = set_snr(diffuse_wn, ref=record, snr=-snr)
+    write_wav(diffuse_wn, fs, diffuse_wn_path)
 
 
 def truncate_data(x, trunc_type="both", eps=1e-5):
