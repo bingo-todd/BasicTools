@@ -84,9 +84,9 @@ def easy_parallel(func, tasks, n_worker=8, show_process=False,
     if isinstance(tasks, np.ndarray):
         tasks = tasks.tolist()
 
-    # avoid n_worker is too large for current machine
-    n_worker_max = len(list(os.sched_getaffinity(0)))
-    n_worker = np.min((n_worker, n_worker_max))
+    # # avoid n_worker is too large for current machine
+    # n_worker_max = len(list(os.sched_getaffinity(0)))
+    # n_worker = np.min((n_worker, n_worker_max))
 
     threads = []
     outputs_dict = Manager().dict()

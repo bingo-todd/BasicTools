@@ -5,31 +5,6 @@ from .parse_file import file2dict
 from LocTools.add_log import add_log
 
 
-def VAD(x, frame_len, frame_shift=None, theta=40, is_plot=False):
-    """ Energy based vad.
-        1. Frame data with frame_shift of 0
-        2. Calculte the energy of each frame
-        3. Frames with energy below max_energy-theta is regarded as
-            silent frames
-    Args:
-        x: single channel signal
-        frame_len: frame length
-        frame_shift: frames shift length in time
-        theta: the maximal energy difference between frames, default 40dB
-        is_plot: whether to ploting vad result, default False
-    Returns:
-        vad_flag_all, as well as figures of vad_labesl if is_plot is ture
-    """
-    if frame_shift is None:
-        frame_shift = frame_len
-
-    frame_all = wav_tools.frame_data(x, frame_len, frame_shift)
-    energy_frame_all = np.sum(frame_all**2, axis=1)
-    energy_thd = np.max(energy_frame_all)/(10**(theta/10.0))
-    vad_labels = np.greater(energy_frame_all, energy_thd).astype(np.int)
-    return vad_labels
-
-
 def parse_args():
     parser = argparse.ArgumentParser(description='parse argments')
     parser.add_argument('--wav', dest='wav_path', type=str,
@@ -74,7 +49,7 @@ def VAD_1wav(wav_path, frame_len, frame_shift):
 
     vad_result_all = []
     for channel_i in range(n_channel):
-        vad_result = VAD(wav[:, channel_i], frame_len, frame_shift)
+        vad_result = wav_tools.VAD(wav[:, channel_i], frame_len, frame_shift)
         vad_result_all.append(vad_result)
     return vad_result_all
 

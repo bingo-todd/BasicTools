@@ -6,7 +6,6 @@ import librosa
 import librosa.display
 import soundfile as sf
 
-# from . import plot_tools
 from .GPU_Filter import GPU_Filter
 
 
@@ -217,42 +216,69 @@ def gen_wn(shape, ref=None, energy_ratio=0, power=1):
     return wn
 
 
-def gen_diffuse_wn(brirs_path, record_path, snr, diffuse_wn_path):
+def gen_diffuse_wn(brirs_path, record_path, snr, diffuse_wn_path, gpu_id=0):
 
-    gpu_filter = GPU_Filter(0)
+    if os.path.exists(diffuse_wn_path):
+        return
 
+    gpu_filter = GPU_Filter(gpu_id)
     brirs = np.load(brirs_path)
-    n_azi = brirs_path.shape[0]
+    n_azi = brirs.shape[0]
 
     record, fs = read_wav(record_path)
-    record_len = record.shape
-    diffuse_wn = np.zeros(record.shape, dtype=np.float32)
+    record_len, n_channel = record.shape
+    diffuse_wn = np.zeros([record_len, n_channel], dtype=np.float32)
+
     for azi_i in range(n_azi):
-        wn = gen_wn(record_len)
-        wn_record = gpu_filter.brir_filter(brirs[azi_i], wn)
+        wn = gen_wn([record_len])
+        wn_record = gpu_filter.brir_filter(wn, brirs[azi_i])
         diffuse_wn = diffuse_wn + wn_record
-    diffuse_wn = set_snr(diffuse_wn, ref=record, snr=-snr)
+    diffuse_wn = set_snr(diffuse_wn, ref=record, snr=snr)
     write_wav(diffuse_wn, fs, diffuse_wn_path)
 
 
-def truncate_data(x, trunc_type="both", eps=1e-5):
-    """truncate small-value sample in the first dimension
+def VAD(x, frame_len, frame_shift=None, theta=40, is_plot=False):
+    """ Energy based vad.
+        1. Frame data with frame_shift of 0
+        2. Calculte the energy of each frame
+        3. Frames with energy below max_energy-theta is regarded as
+            silent frames
+    Args:
+        x: single channel signal
+        frame_len: frame length
+        frame_shift: frames shift length in time
+        theta: the maximal energy difference between frames, default 40dB
+        is_plot: whether to ploting vad result, default False
+    Returns:
+        vad_flags: True for voice, False for silence
+    """
+    if frame_shift is None:
+        frame_shift = frame_len
+    frame_all = frame_data(x, frame_len, frame_shift)
+    energy_frame_all = np.sum(frame_all**2, axis=1)
+    energy_thd = np.max(energy_frame_all)/(10**(theta/10.0))
+    vad_flags = energy_frame_all > energy_thd
+    return vad_flags
+
+
+def truncate_silence(x, frame_len, trunc_type="both", theta=40):
+    """truncate silence part along the first dimension
     Args:
         x: data to be truncated
-        trunc_type: specify parts to be cliped, options: begin,end,
-            both(default)
+        trunc_type: specify which parts to be cliped,
+            choices=[begin,end, both], default to both
         eps: amplitude threshold
     Returns:
         data truncated
     """
-    valid_sample_pos = np.nonzero(x > eps)[0]
-    start_pos = 0
-    end_pos = x.shape[0]
+    vad_flags = VAD(x, frame_len)
+    vad_frame_inices = np.nonzeros(vad_flags)
+    start_pos, end_pos = 0, 0
     if type in ['begin', 'both']:
-        start_pos = np.min(valid_sample_pos)
+        start_pos = np.int(vad_frame_inices[0]*frame_len)
     if type in ['end', 'both']:
-        end_pos = np.max(valid_sample_pos)
-    return x[start_pos:end_pos+1]
+        end_pos = np.int(vad_frame_inices[-1]*frame_len) + frame_len
+    return x[start_pos:end_pos]
 
 
 def hz2erbscal(freq):

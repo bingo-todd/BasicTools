@@ -12,7 +12,7 @@ def file2dict(file_path, numeric=False, squeeze=False, repeat_processor=None):
         numeric: bool, whether items are array of numbers.
             if True, value will be parsed to numpy 2d array
         repeat_processor: how to deal with repeat keys
-            choices ['keep', 'none']  'average not implemented
+        choices ['keep', 'except', 'none']  'average not implemented
     Returns:
         a dict object
     """
@@ -37,15 +37,16 @@ def file2dict(file_path, numeric=False, squeeze=False, repeat_processor=None):
                     if squeeze:
                         value = np.squeeze(value)
 
-                if repeat_processor == 'keep':
-                    # keep values of key in a list
-                    if key in dict_obj.keys():
+                if key in dict_obj.keys():
+                    if repeat_processor == 'keep':
                         dict_obj[key].append(value)
+                    elif repeat_processor == 'except':
+                        raise Exception(f'duplicate keys in {file_path}')
                     else:
-                        dict_obj[key] = [value]
+                        dict_obj[key] = value
                 else:
-                    if key in dict_obj.keys():
-                        raise Exception('duplicate key')
+                    if repeat_processor == 'keep':
+                        dict_obj[key] = [value]
                     else:
                         dict_obj[key] = value
             except Exception as e:
