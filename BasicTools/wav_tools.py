@@ -150,8 +150,8 @@ def cal_snr(tar, inter, frame_len=None, frame_shift=None, is_plot=None):
     """
 
     # single channel
-    if len(tar.shape) > 1 or len(inter.shape) > 1:
-        raise Exception('input should be single channel')
+    # if len(tar.shape) > 1 or len(inter.shape) > 1:
+    #     raise Exception('input should be single channel')
 
     if frame_len is None:
         snr = _cal_snr(tar, inter)
@@ -165,11 +165,11 @@ def cal_snr(tar, inter, frame_len=None, frame_shift=None, is_plot=None):
                              tar:{}, inter:{}'.format(tar.shape[0],
                                                       inter.shape[0]))
 
-        frame_all_tar = frame_data(tar, frame_len, frame_shift)
-        frame_all_inter = frame_data(inter, frame_len, frame_shift)
-        n_frame = frame_all_tar.shape[0]
-        snr = np.asarray([_cal_snr(frame_all_tar[i],
-                                   frame_all_inter[i])
+        tar_frames = frame_data(tar, frame_len, frame_shift)
+        inter_frames = frame_data(inter, frame_len, frame_shift)
+        n_frame = tar_frames.shape[0]
+        snr = np.asarray([_cal_snr(tar_frames[i],
+                                   inter_frames[i])
                           for i in range(n_frame)])
         if is_plot:
             n_sample = tar.shape[0]
@@ -271,12 +271,12 @@ def truncate_silence(x, frame_len, trunc_type="both", theta=40):
     Returns:
         data truncated
     """
-    vad_flags = VAD(x, frame_len)
-    vad_frame_inices = np.nonzeros(vad_flags)
+    vad_flags = VAD(x, frame_len, theta=theta)
+    vad_frame_inices = np.nonzero(vad_flags)[0]
     start_pos, end_pos = 0, 0
-    if type in ['begin', 'both']:
+    if trunc_type in ['begin', 'both']:
         start_pos = np.int(vad_frame_inices[0]*frame_len)
-    if type in ['end', 'both']:
+    if trunc_type in ['end', 'both']:
         end_pos = np.int(vad_frame_inices[-1]*frame_len) + frame_len
     return x[start_pos:end_pos]
 

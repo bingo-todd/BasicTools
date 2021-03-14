@@ -38,9 +38,10 @@ class Iterator:
     def go_back(self, n_step):
         """ move _item_pointer backwards
         """
-        if n_step >= self._item_pointer:
-            n_step = self._item_pointer+1  #
-        self._item_pointer -= n_step
+        if n_step > self._item_pointer:
+            self._item_pointer = -1
+        else:
+            self._item_pointer -= n_step
 
     def reset(self, shuffle=False):
         if shuffle:
