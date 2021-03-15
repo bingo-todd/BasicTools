@@ -7,9 +7,12 @@ import tensorflow as tf  #noqa:E402
 class GPU_Filter:
     def __init__(self, gpu_id=0):
         gpus = tf.config.experimental.list_physical_devices('GPU')
-        tf.config.experimental.set_visible_devices(gpus[gpu_id], 'GPU')
-        for gpu in gpus:
-            tf.config.experimental.set_memory_growth(gpu, True)
+        try:
+            tf.config.experimental.set_visible_devices(gpus[gpu_id], 'GPU')
+            for gpu in gpus:
+                tf.config.experimental.set_memory_growth(gpu, True)
+        except Exception:
+            None
 
     def filter(self, x, coef):
         # ensure all data is float32

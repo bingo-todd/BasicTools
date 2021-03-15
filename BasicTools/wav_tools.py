@@ -6,8 +6,6 @@ import librosa
 import librosa.display
 import soundfile as sf
 
-from .GPU_Filter import GPU_Filter
-
 
 def read_wav(wav_path, tar_fs=None):
     """ read wav file, implete with soundfile
@@ -217,6 +215,8 @@ def gen_wn(shape, ref=None, energy_ratio=0, power=1):
 
 
 def gen_diffuse_wn(brirs_path, record_path, snr, diffuse_wn_path, gpu_id=0):
+
+    from .GPU_Filter import GPU_Filter
 
     if os.path.exists(diffuse_wn_path):
         return
