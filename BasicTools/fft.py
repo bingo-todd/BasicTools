@@ -3,14 +3,14 @@ from . import wav_tools
 # from . import auditory_scale
 
 
-def cal_stft(x, win_f=np.hanning, frame_len=1024, shift_len=None,
+def cal_stft(x, win_f=np.hanning, frame_len=1024, frame_shift=None,
              is_plot=False, fs=None, freq_scale='erb'):
     """short-time fast Fourier transform
     Args:
         x: 2d ndarray, [signal_len,n_chann]
         win_f: window function
         frame_len:
-        shift_len:
+        frame_shift:
         is_plot:
         fs: sample frquency
         freq_scale:
@@ -20,10 +20,10 @@ def cal_stft(x, win_f=np.hanning, frame_len=1024, shift_len=None,
         freq: frequency of each bins
 
     """
-    if shift_len is None:
-        shift_len = np.int(frame_len/2)
+    if frame_shift is None:
+        frame_shift = np.int(frame_len/2)
 
-    frames = np.squeeze(wav_tools.frame_data(x, frame_len, shift_len))
+    frames = np.squeeze(wav_tools.frame_data(x, frame_len, frame_shift))
     window = win_f(frame_len)
     frames = np.multiply(frames, window)
     #
@@ -33,7 +33,7 @@ def cal_stft(x, win_f=np.hanning, frame_len=1024, shift_len=None,
     if fs is None:
         fs = 1
     freq = np.arange(half_frame_len)/frame_len*fs
-    t = np.arange(frames.shape[0])*shift_len/fs
+    t = np.arange(frames.shape[0])*frame_shift/fs
 
     return [stft, t, freq]
 

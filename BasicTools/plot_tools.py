@@ -7,6 +7,13 @@ import datetime
 from PIL import Image
 import pathlib
 from functools import wraps
+from .scale import mel, erb
+
+plt.rcParams['font.sans-serif'] = ['SimHei']
+plt.rcParams['font.size'] = 12
+plt.rcParams['axes.unicode_minus'] = False
+plt.rcParams['lines.linewidth'] = 2
+plt.rcParams['figure.dpi'] = 200
 
 
 def line_collector(plot_func):
@@ -73,9 +80,9 @@ def imshow(Z, ax=None, x_lim=None, y_lim=None, vmin=None, vmax=None, **kwargs):
     return fig, ax
 
 
-def plot_matrix(matrix, xlabel=None, ylabel=None, show_value=False,
-                normalize=True, vmin=None, vmax=None, aspect='auto',
-                cmap=plt.cm.coolwarm):
+def plot_matrix(matrix, ax=None, x=None, y=None, xlabel=None, ylabel=None,
+                show_value=False, normalize=True, vmin=None, vmax=None,
+                aspect='auto', cmap=plt.cm.coolwarm):
     """
     This function prints and plots matrix.
     Normalization can be applied by setting `normalize=True`.
@@ -89,15 +96,21 @@ def plot_matrix(matrix, xlabel=None, ylabel=None, show_value=False,
     - normalize: whether normalization
     """
 
-    if vmin is None:
-        vmin = np.min(matrix)
-    if vmax is None:
-        vmax = np.max(matrix)
+    if ax is None:
+        fig, ax = plt.subplots(1, 1)
+    else:
+        fig = None
 
-    fig, ax = plt.subplots(1, 1, tight_layout=True)
-    plt.imshow(matrix, interpolation='nearest', cmap=cmap, vmin=vmin,
-               vmax=vmax, aspect=aspect)
-    plt.colorbar(shrink=0.6)
+    if x is not None and y is not None:
+        im = ax.imshow(matrix, interpolation='nearest', cmap=cmap,
+                       vmin=vmin, vmax=vmax, extent=[x[0], x[-1], y[0], y[-1]],
+                       aspect=aspect)
+    else:
+        im = ax.imshow(matrix, interpolation='nearest', cmap=cmap,
+                       vmin=vmin, vmax=vmax, aspect=aspect)
+
+    if fig is not None:
+        plt.colorbar(im, shrink=0.6)
 
     # x_axis: colum  y_axis: row
     if show_value:
@@ -111,30 +124,28 @@ def plot_matrix(matrix, xlabel=None, ylabel=None, show_value=False,
         plt.ylabel(xlabel)
         plt.xlabel(ylabel)
 
-    tick_labels = list(map(str, range(matrix.shape[0])))
-    tick_marks = np.arange(matrix.shape[0])
-    plt.yticks(tick_marks, tick_labels)  # rotation=45)
+    # tick_labels = list(map(str, range(matrix.shape[0])))
+    # tick_marks = np.arange(matrix.shape[0])
+    # plt.yticks(tick_marks, tick_labels)  # rotation=45)
 
-    tick_labels = list(map(str, range(matrix.shape[1])))
-    tick_marks = np.arange(matrix.shape[1])
-    plt.xticks(tick_marks, tick_labels)
+    # tick_labels = list(map(str, range(matrix.shape[1])))
+    # tick_marks = np.arange(matrix.shape[1])
+    # plt.xticks(tick_marks, tick_labels)
 
     return fig, ax
 
 
-def plot_surf(Z, X=None, Y=None, ax=None, xlabel=None, ylabel=None,
+def plot_surf(Z, x=None, y=None, ax=None, xlabel=None, ylabel=None,
               vmin=None, vmax=None, **kwargs):
     m, n = Z.shape
-    if X is None and Y is None:
+    if x is None and y is None:
         X, Y = np.meshgrid(np.arange(n), np.arange(m))
     else:
-        X, Y = np.asarray(X), np.asarray(Y)
-        if len(X.shape) < 2:
-            X, Y = np.meshgrid(X, Y)
-    if vmin is None:
-        vmin = np.min(Z)
-    if vmax is None:
-        vmax = np.max(Z)
+        x, y = np.asarray(x), np.asarray(y)
+        if len(np.squeeze(x).shape) < 2:
+            X, Y = np.meshgrid(x, y)
+        else:
+            X, Y = x, y
 
     basic_settings = {'cmap': cm.coolwarm,
                       'vmin': vmin,
@@ -145,9 +156,10 @@ def plot_surf(Z, X=None, Y=None, ax=None, xlabel=None, ylabel=None,
         fig, ax = plt.subplots(subplot_kw={'projection': '3d'})
     else:
         fig = None
-
     surf = ax.plot_surface(X, Y, Z, **basic_settings)
     ax.set_zlim((vmin, vmax))
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
     if fig is not None:
         fig.colorbar(surf, shrink=0.6)
     return fig, ax
@@ -208,19 +220,14 @@ def break_plot():
     savefig(fig, 'break_axis')
 
 
-def plot_wav(wav, fs=None, label=None, ax_wav=None, ax_specgram=None,
-             frame_len=1024, frame_shift=512, yscale='mel', amp_max=None):
+def plot_wav(wav, fs=None, label=None, ax_wav=None, plot_spec=False,
+             ax_specgram=None, frame_len=1024, frame_shift=512, yscale='mel',
+             amp_max=None):
     """plot spectrogram of given len
     Args:
     """
     from . import fft
 
-    if amp_max is None:
-        amp_max = np.max(np.abs(wav))
-
-    stft_params = {'frame_len': frame_len,
-                   'shift_len': frame_shift,
-                   'fs': fs}
     n_sample = wav.shape[0]
     n_frame = np.int(np.floor(np.float32(n_sample-frame_len)/frame_shift)+1)
     n_bin = int(frame_len/2)
@@ -231,36 +238,40 @@ def plot_wav(wav, fs=None, label=None, ax_wav=None, ax_specgram=None,
         t_label = 'sample(n)'
         freq_label = 'normalizeed frequnecy'
     else:
-        freq_norm_factor = 1000
+        freq_norm_factor = 1
         t_label = 'time(s)'
-        freq_label = 'frequnecy(kHz)'
+        freq_label = 'frequnecy(Hz)'
 
     fig = None
     # if ax_wav and ax_specgram are not specified
-    if ax_wav is None and ax_specgram is None:
-        fig, ax = plt.subplots(2, 1)
-        ax_wav, ax_specgram = ax
+    if plot_spec:
+        if ax_wav is None and ax_specgram is None:
+            fig, ax = plt.subplots(2, 1)
+            ax_wav, ax_specgram = ax
+        else:
+            fig, ax = plt.subplots(1, 1)
 
+    if amp_max is None:
+        amp_max = np.max(np.abs(wav))
     if ax_wav is not None:
-        t_tick_wav = np.arange(n_sample)/fs
-        ax_wav.plot(t_tick_wav, wav, label=label)
-        ax_wav.set_xlim([t_tick_wav[0], t_tick_wav[-1]])
+        t = np.arange(n_sample)/fs
+        ax_wav.plot(t, wav, label=label)
+        ax_wav.set_xlim([t[0], t[-1]])
         ax_wav.set_xlabel(t_label)
         ax_wav.set_ylim((-amp_max, amp_max))
         ax_wav.set_title(label)
 
     if ax_specgram is not None:
-        specgram = 20*np.log10(
-            np.abs(
-                fft.cal_stft(wav, **stft_params)[0]))
-        max_value = np.max(specgram)
+        specgram, t, freqs = fft.cal_stft(wav, frame_len=frame_len,
+                                          frame_shift=frame_shift, fs=fs)
+        specgram_amp = 20*np.log10(np.abs(specgram))
+        max_value = np.max(specgram_amp)
         min_value = max_value-60
-        n_frame, n_bin = specgram.shape
-        t_tick = (np.arange(n_frame)+1)*frame_shift/fs
-        freq_tick = np.arange(n_bin)/frame_len*fs/freq_norm_factor
-        imshow(ax=ax_specgram, Z=specgram.T,
-               x_lim=[0, t_tick[-1]], y_lim=[0, freq_tick[-1]],
+        n_frame, n_bin = specgram_amp.shape
+        imshow(ax=ax_specgram, Z=specgram_amp.T,
+               x_lim=[0, t[-1]], y_lim=[0, freqs[-1]/freq_norm_factor],
                vmin=min_value, vmax=max_value, origin='lower')
+        ax_specgram.set_yscale('mel')
         ax_specgram.set_xlabel(t_label)
         ax_specgram.set_ylabel(freq_label)
         # ax_specgram.yaxis.set_major_formatter('{x:.1f}')

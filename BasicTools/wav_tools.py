@@ -43,6 +43,7 @@ def resample(x, orig_fs, tar_fs, axis=0):
     #
     x = np.asfortranarray(x)
     x_resampled = librosa.resample(x, orig_fs, tar_fs)
+    x_resampled = np.asarray(x_resampled)
     x_resampled = x_resampled.T
     return x_resampled
 

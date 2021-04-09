@@ -42,8 +42,14 @@ def parse_args():
                         help='')
     parser.add_argument('--xlabel', dest='xlabel', type=str, default=None,
                         help='')
+    parser.add_argument('--x-range', dest='x_range', type=float, default=None,
+                        nargs='+', help='')
     parser.add_argument('--ylabel', dest='ylabel', type=str, default=None,
                         help='')
+    parser.add_argument('--y-range', dest='y_range', type=float, default=None,
+                        nargs='+', help='')
+    parser.add_argument('--view', dest='view', type=float, default=None,
+                        nargs='+', help='')
     parser.add_argument('--show-value', dest='show_value', type=str,
                         choices=['true', 'false'], default='false',
                         help='')
@@ -63,6 +69,11 @@ def main():
     args = parse_args()
 
     matrix = load_matrix(args.matrix_path)
+    if args.x_range is not None and args.y_range is not None:
+        x = np.linspace(args.x_range[0], args.x_range[1], matrix.shape[0])
+        y = np.linspace(args.y_range[0], args.y_range[1], matrix.shape[1])
+    else:
+        x, y = None, None
 
     if args.type == 'image':
         fig, ax = plot_matrix(matrix,
@@ -72,13 +83,19 @@ def main():
                               normalize=args.normalize == 'true',
                               vmin=args.vmin,
                               vmax=args.vmax,
+                              x=x,
+                              y=y,
                               aspect=args.aspect)
     else:
-        fig, ax = plot_surf(Z=matrix,
+        fig, ax = plot_surf(Z=matrix.T,
+                            x=x,
+                            y=y,
                             vmin=args.vmin,
                             vmax=args.vmax,
                             xlabel=args.xlabel,
                             ylabel=args.ylabel)
+        if args.view is not None:
+            ax.view_init(azim=args.view[0], elev=args.view[1])
 
     if args.fig_path is not None:
         fig.savefig(args.fig_path)

@@ -1,18 +1,14 @@
 # -*- coding:utf-8 -*-
 import numpy as np
-import os
-import sys
 from matplotlib import scale as mscale
 from matplotlib import transforms as mtransforms
 from matplotlib import ticker as mticker
 from matplotlib import rcParams
 
-workspace_dir = os.path.join(os.path.expanduser('~'),'Work_Space')
-sys.path.append(os.path.join(workspace_dir,'my_module','basic_tools',
-                             'basic_tools'))
-import unit_convert
+from .. import unit_convert
 
 rcParams['axes.axisbelow'] = False
+
 
 class MelScale(mscale.ScaleBase):
 
@@ -24,37 +20,31 @@ class MelScale(mscale.ScaleBase):
         """
         return self.MelTransform()
 
-
-    def limit_range_for_scale(self,vmin,vmax,minpos):
+    def limit_range_for_scale(self, vmin, vmax, minpos):
         """limit the bounds of axis
         """
-        MIN_VALUE = 1e-20 # freq > 0
-        return max(vmin,MIN_VALUE),vmax
+        MIN_VALUE = 1e-20  # freq > 0
+        return max(vmin, MIN_VALUE), vmax
 
-
-    def set_default_locators_and_formatters(self,axis):
+    def set_default_locators_and_formatters(self, axis):
         axis.set_major_locator(mticker.AutoLocator())
         axis.set_minor_locator(mticker.AutoLocator())
-
 
     class MelTransform(mtransforms.Transform):
         """
         """
         # value members that required
-        input_dims = 1# dimension of input (source axis)
-        output_dims = 1 # dimension of output (target axis)
-        is_separable = True #True if this transform is separable
-                            # in the x- and y- dimensions.
+        input_dims = 1  # dimension of input (source axis)
+        output_dims = 1  # dimension of output (target axis)
+        # True if this transform is separable in the x- and y- dimensions.
+        is_separable = True
         has_inverse = True
 
-
-        def transform_non_affine(self,a):
+        def transform_non_affine(self, a):
             return unit_convert.hz2mel(a)
-
 
         def inverted(self):
             return MelScale.InvertMelTransform()
-
 
     class InvertMelTransform(mtransforms.Transform):
         """
@@ -67,7 +57,7 @@ class MelScale(mscale.ScaleBase):
         def __init__(self):
             mtransforms.Transform.__init__(self)
 
-        def transform_non_affine(self,a):
+        def transform_non_affine(self, a):
             return unit_convert.mel2hz(a)
 
         def inverted(self):
@@ -78,13 +68,13 @@ mscale.register_scale(MelScale)
 
 
 if __name__ == "__main__":
-    import plot_tools
-    x = np.arange(100,2000,100)
+    x = np.arange(100, 2000, 100)
     y = x
     import matplotlib.pyplot as plt
-    fig,ax = plt.subplots(1,1)
-    ax.plot(x,y)
+    fig, ax = plt.subplots(1, 1)
+    # ax.plot(x, y)
+    ax.imshow(np.random.rand(20, 20), extent=[100, 3e3, 100, 3e3])
     ax.set_yscale('mel')
     ax.set_xlabel('Frequency(hz)')
     ax.set_ylabel('Mel scale')
-    plot_tools.savefig(fig,fig_name='mel_scale',fig_dir='../images/auditory_scale')
+    fig.savefig('../../tmp.png')
