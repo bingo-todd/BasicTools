@@ -5,6 +5,12 @@ import argparse
 from .plot_tools import plot_matrix
 from .plot_tools import plot_surf
 
+plt.rcParams['font.sans-serif'] = ['SimHei']
+plt.rcParams['font.size'] = 12
+plt.rcParams['axes.unicode_minus'] = False
+plt.rcParams['lines.linewidth'] = 2
+plt.rcParams['figure.dpi'] = 200
+
 
 def load_matrix(matrix_path):
     suffix = matrix_path.split('.')[-1]
@@ -36,18 +42,27 @@ def parse_args():
     parser.add_argument('--aspect', dest='aspect', type=str,
                         choices=['equal', 'auto'], default='auto',
                         help='')
+    parser.add_argument('--transpose', dest='transpose', type=str,
+                        choices=['true', 'false'], default='false',
+                        help='')
     parser.add_argument('--vmin', dest='vmin', type=float, default=None,
                         help='')
     parser.add_argument('--vmax', dest='vmax', type=float, default=None,
                         help='')
+    parser.add_argument('--cmap-range', dest='cmap_range', type=float, nargs=2,
+                        default=None, help='range for colormap')
+    parser.add_argument('--xlim', dest='xlim', type=float, default=None,
+                        nargs=2, help='')
     parser.add_argument('--xlabel', dest='xlabel', type=str, default=None,
                         help='')
-    parser.add_argument('--x-range', dest='x_range', type=float, default=None,
-                        nargs='+', help='')
+    parser.add_argument('--ylim', dest='ylim', type=float, default=None,
+                        nargs=2, help='')
     parser.add_argument('--ylabel', dest='ylabel', type=str, default=None,
                         help='')
-    parser.add_argument('--y-range', dest='y_range', type=float, default=None,
-                        nargs='+', help='')
+    parser.add_argument('--zlim', dest='zlim', type=float, default=None,
+                        nargs=2, help='')
+    parser.add_argument('--zlabel', dest='zlabel', type=str, default=None,
+                        help='')
     parser.add_argument('--view', dest='view', type=float, default=None,
                         nargs='+', help='')
     parser.add_argument('--show-value', dest='show_value', type=str,
@@ -69,11 +84,17 @@ def main():
     args = parse_args()
 
     matrix = load_matrix(args.matrix_path)
-    if args.x_range is not None and args.y_range is not None:
-        x = np.linspace(args.x_range[0], args.x_range[1], matrix.shape[0])
-        y = np.linspace(args.y_range[0], args.y_range[1], matrix.shape[1])
+    if args.transpose == 'true':
+        matrix = matrix.T
+
+    if args.xlim is not None:
+        x = np.linspace(args.xlim[0], args.xlim[1], matrix.shape[0])
     else:
-        x, y = None, None
+        x = None
+    if args.ylim is not None:
+        y = np.linspace(args.ylim[0], args.ylim[1], matrix.shape[1])
+    else:
+        y = None
 
     if args.type == 'image':
         fig, ax = plot_matrix(matrix,
@@ -90,10 +111,13 @@ def main():
         fig, ax = plot_surf(Z=matrix.T,
                             x=x,
                             y=y,
+                            zlim=args.zlim,
                             vmin=args.vmin,
                             vmax=args.vmax,
+                            cmap_range=args.cmap_range,
                             xlabel=args.xlabel,
-                            ylabel=args.ylabel)
+                            ylabel=args.ylabel,
+                            zlabel=args.zlabel)
         if args.view is not None:
             ax.view_init(azim=args.view[0], elev=args.view[1])
 

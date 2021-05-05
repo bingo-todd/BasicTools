@@ -193,6 +193,40 @@ def cal_snr(tar, inter, frame_len=None, frame_shift=None, is_plot=None):
     return snr
 
 
+def cal_delay(x1, x2, method='gcc'):
+    """
+    """
+    # fs = 1
+    x1_len = x1.shape[0]
+    x2_len = x2.shape[0]
+
+    if method == 'gcc':
+        ccf = np.correlate(x1, x2, mode='full')
+        delay = np.argmax(ccf)-x2_len+1
+    elif method == 'phase':
+        x_len = np.max([x1_len, x2_len])
+        half_x_len = np.int(np.floor(x_len/2))
+        x1_phase = \
+            np.unwrap(
+                np.angle(
+                    np.fft.fft(x1, x_len)))[1:half_x_len]
+        x2_phase = \
+            np.unwrap(
+                np.angle(
+                    np.fft.fft(x2, x_len)))[1:half_x_len]
+        phase_diff = np.unwrap(x1_phase-x2_phase)
+        norm_freqs = np.arange(1, half_x_len)/x_len
+        coef = np.polyfit(norm_freqs, phase_diff, 1)
+        delay = coef[0]/(2*np.pi)
+
+        # fig, ax = plt.subplots(1, 1)
+        # ax.plot(norm_freqs, phase_diff)
+        # fig.savefig('tmp.png')
+    else:
+        raise Exception('not finish')
+    return delay
+
+
 def gen_wn(shape, ref=None, energy_ratio=0, power=1):
     """Generate Gaussian white noise with either given energy ration related
     to ref signal or given power
@@ -245,7 +279,8 @@ def VAD(x, frame_len, frame_shift=None, theta=40, is_plot=False):
         3. Frames with energy below max_energy-theta is regarded as
             silent frames
     Args:
-        x: single channel signal
+        x: input signal. when multiple-channel signal is given, signal from all
+            channels are summed after being squared
         frame_len: frame length
         frame_shift: frames shift length in time
         theta: the maximal energy difference between frames, default 40dB
@@ -255,10 +290,11 @@ def VAD(x, frame_len, frame_shift=None, theta=40, is_plot=False):
     """
     if frame_shift is None:
         frame_shift = frame_len
-    frame_all = frame_data(x, frame_len, frame_shift)
-    energy_frame_all = np.sum(frame_all**2, axis=1)
-    energy_thd = np.max(energy_frame_all)/(10**(theta/10.0))
-    vad_flags = energy_frame_all > energy_thd
+    frames = frame_data(x, frame_len, frame_shift)
+    n_frame = frames.shape[0]
+    energy = np.asarray([np.sum(frames[i]**2) for i in range(n_frame)])
+    energy_thd = np.max(energy)/(10**(theta/10.0))
+    vad_flags = energy > energy_thd
     return vad_flags
 
 
@@ -303,9 +339,11 @@ def cal_erb(cf):
 
 def test():
     print('test')
-    wav_fpath = 'resource/tar.wav'
-    print(wav_fpath)
-    data, fs = read_wav(wav_fpath)
+    wav_path = '../examples/data/binaural_1.wav'
+    wav, fs = read_wav(wav_path)
+    x = np.zeros([600, 2])
+    x[:, 0] = np.pad(wav[100:600, 0], [50, 50])
+    x[:, 1] = np.pad(wav[100:600, 0], [20, 80])
 
     # vad
     # vad_flag_all,fig = vad(data,fs,frame_dur=20e-3,is_plot=True,theta=20)
@@ -314,6 +352,10 @@ def test():
     # wave
     # fig = plot_wav_spec(data)
     # plot_tools.savefig(fig,name='wav_spec',dir='./images/wav_tools')
+
+    delay_gcc = cal_delay(x[:, 0], x[:, 1], method='gcc')
+    delay_phase = cal_delay(x[:, 0], x[:, 1], method='phase')
+    print(delay_gcc, delay_phase)
 
 
 if __name__ == '__main__':

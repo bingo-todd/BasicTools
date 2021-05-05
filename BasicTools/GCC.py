@@ -69,11 +69,13 @@ def cal_gcc_phat(x1, x2, win_f=np.hanning, max_delay=None,
     return gcc_phat_result
 
 
-def _cal_ccf(x1, x2, max_delay, win_f):
+def _cal_ccf(x1, x2, max_delay, win_f=np.ones, normalize=False):
     """calculate cross-crrelation function in frequency domain
     Args:
         x1,x2: single channel signals
         max_delay: delay range, ccf_len = 2*max_delay+1
+        win_f: window function
+        normalize: cross-correlation coefficients or not
     Returns:
         cross-correlation function with shape of [ccf_len]
     """
@@ -83,19 +85,28 @@ def _cal_ccf(x1, x2, max_delay, win_f):
     # add hanning window before fft
     window = win_f(n_sample)
     ccf_len = 2*n_sample-1
-    x1_fft = np.fft.fft(np.multiply(x1, window), ccf_len)
-    x2_fft = np.fft.fft(np.multiply(x2, window), ccf_len)
+    x1_windowed = np.multiply(x1, window)
+    x1_fft = np.fft.fft(x1_windowed, ccf_len)
+    x2_windowed = np.multiply(x2, window)
+    x2_fft = np.fft.fft(x2_windowed, ccf_len)
+
+    if normalize:
+        norm_coef = np.sqrt(np.sum(x1_windowed**2)*np.sum(x2_windowed**2))
+    else:
+        norm_coef = 1
+
     ccf_unshift = np.real(
                     np.fft.ifft(
                         np.multiply(x1_fft, np.conjugate(x2_fft))))
     ccf = np.concatenate([ccf_unshift[-max_delay:],
                           ccf_unshift[:max_delay+1]],
                          axis=0)
+    ccf = ccf/norm_coef
     return ccf
 
 
 def cal_ccf(x1, x2, max_delay=None, frame_len=None, shift_len=None,
-            win_f=np.ones):
+            win_f=np.ones, normalize=False):
     """Calculate cross-correlation function of whole signal or frames
     if frame_len is specified
     Args:
@@ -108,13 +119,14 @@ def cal_ccf(x1, x2, max_delay=None, frame_len=None, shift_len=None,
                    as one frame
         shift_len: if not specified, set to frame_len/2
         win_f: window function, default to np.ones, rectangle windows
+        normalize:
     Returns:
         corss-correlation function, with shape of
         - [ccf_len]: ccf of whole signal
         - [n_frame,ccf_len]: ccf of frames
     """
     if frame_len is None:
-        ccf = _cal_ccf(x1, x2, max_delay, win_f)
+        ccf = _cal_ccf(x1, x2, max_delay, win_f, normalize)
     else:
         if shift_len is None:
             shift_len = np.int16(frame_len/2)
@@ -126,56 +138,9 @@ def cal_ccf(x1, x2, max_delay=None, frame_len=None, shift_len=None,
         frames_x2 = wav_tools.frame_data(x2, frame_len, shift_len)
         n_frame = frames_x1.shape[0]
         ccf = np.asarray([_cal_ccf(frames_x1[i], frames_x2[i],
-                                   max_delay, win_f)
+                                   max_delay, win_f, normalize)
                           for i in range(n_frame)])
     return ccf
-
-
-def cal_corr_coef(x1, x2, max_delay=None):
-    """ calculate the correlation coefficients
-    """
-
-    x1_len = x1.shape[0]
-    x2_len = x2.shape[0]
-
-    x1_power = x1**2
-    x2_power = x2**2
-
-    if max_delay is None:
-        max_delay = x1_len+x2_len-1
-    n_delay = 2*max_delay+1
-    corr_coef = np.zeros(n_delay)
-    for i, delay in enumerate(range(-max_delay, max_delay+1)):
-        if delay < 0:
-            x1_valid_len = x1_len
-            x2_valid_len = x2_len+delay
-            x_valid_len = np.min([x1_valid_len, x2_valid_len])
-            x1_slice = slice(0, x_valid_len)
-            x2_slice = slice(-delay, -delay+x_valid_len)
-        if delay > 0:
-            x1_valid_len = x1_len-delay
-            x2_valid_len = x2_len
-            x_valid_len = np.min([x1_valid_len, x2_valid_len])
-            x1_slice = slice(delay, delay+x_valid_len)
-            x2_slice = slice(0, x_valid_len)
-
-        corr_coef[i] = (np.sum(x1[x1_slice]*x2[x2_slice])
-                        / np.sqrt(np.sum(x1_power[x1_slice])
-                                  * np.sum(x2_power[x2_slice])))
-    return corr_coef
-
-
-def test_corr_coef(max_delay=18):
-    """
-    """
-    wav_path = '../examples/data/binaural_pos4.wav'
-    wav, fs = wav_tools.read_wav(wav_path)
-
-    corr_coef = cal_corr_coef(wav[:, 0], wav[:, 1], max_delay=max_delay)
-
-    fig, ax = plt.subplots(1, 1)
-    ax.plot(range(-max_delay, max_delay+1), corr_coef)
-    fig.savefig('../examples/images/ccf/corr_coef_eg.png')
 
 
 def test_ccf_phat(frame_len=320, max_delay=18):
@@ -204,17 +169,22 @@ def test_ccf():
     wav, fs = wav_tools.read_wav(wav_path)
     wav_len = wav.shape[0]
 
-    ccf_fft = cal_ccf(wav[:, 0], wav[:, 1], max_delay=max_delay)
+    ccf_fft = cal_ccf(wav[:, 0], wav[:, 1], max_delay=max_delay,
+                      normalize=False)
+    ccf_fft_norm = cal_ccf(wav[:, 0], wav[:, 1], max_delay=max_delay,
+                           normalize=True)
 
     ccf_ref = np.correlate(wav[:, 0], wav[:, 1], mode='full')
     ccf_ref = ccf_ref[wav_len-1-max_delay:wav_len+max_delay]
 
     fig, ax = plt.subplots(1, 1)
     t = np.arange(-max_delay, max_delay+1)
-    ax.plot(t, ccf_fft, label='ccf_fft')
+    ax.plot(t, ccf_fft+0.01, label='ccf_fft')
+    ax.plot(t, ccf_fft_norm, label='ccf_fft_norm')
     ax.plot(t, ccf_ref, label='ccf_ref')
     ax.legend()
     fig.savefig('../examples/images/ccf/ccf_compare.png')
+    plt.show()
 
 
 if __name__ == '__main__':

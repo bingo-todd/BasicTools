@@ -1,9 +1,11 @@
 import numpy as np
 
+from .ProcessBar import ProcessBar
+
 
 class Dataset(object):
     def __init__(self, file_reader, file_paths, shuffle_size, batch_size,
-                 output_shapes, always_full_batch=False):
+                 output_shapes, always_full_batch=False, show_process=False):
         self.file_reader = file_reader
 
         self.file_paths = file_paths
@@ -24,6 +26,9 @@ class Dataset(object):
         self.data_bare_left = [np.zeros((0, *shape), dtype=np.float32)
                                for shape in output_shapes]
 
+        self.show_process = show_process
+        self.pb = ProcessBar(len(self.file_paths))
+
     def _load(self):
         # TODO self.data_bare dtype auto change to float64
         # data left from last loading
@@ -36,6 +41,10 @@ class Dataset(object):
                and not self.is_finish_load()):
             data = self.file_reader(self.file_paths[self.cur_file_i])
             self.cur_file_i = self.cur_file_i + 1
+
+            if self.show_process:
+                self.pb.update()
+
             for i in range(self.n_output):
                 self.data_bare[i] = np.concatenate(
                     [self.data_bare[i], data[i].astype(np.float32)],

@@ -1,3 +1,4 @@
+import matplotlib as mlp
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 from matplotlib import cm
@@ -80,9 +81,9 @@ def imshow(Z, ax=None, x_lim=None, y_lim=None, vmin=None, vmax=None, **kwargs):
     return fig, ax
 
 
-def plot_matrix(matrix, ax=None, x=None, y=None, xlabel=None, ylabel=None,
-                show_value=False, normalize=True, vmin=None, vmax=None,
-                aspect='auto', cmap=plt.cm.coolwarm):
+def plot_matrix(matrix, ax=None, fig=None, x=None, y=None, xlabel=None,
+                ylabel=None, show_value=False, normalize=True, vmin=None,
+                vmax=None, aspect='auto', cmap=plt.cm.coolwarm):
     """
     This function prints and plots matrix.
     Normalization can be applied by setting `normalize=True`.
@@ -97,17 +98,20 @@ def plot_matrix(matrix, ax=None, x=None, y=None, xlabel=None, ylabel=None,
     """
 
     if ax is None:
-        fig, ax = plt.subplots(1, 1)
-    else:
-        fig = None
+        fig, ax = plt.subplots(1, 1, tight_layout=True)
 
-    if x is not None and y is not None:
-        im = ax.imshow(matrix, interpolation='nearest', cmap=cmap,
-                       vmin=vmin, vmax=vmax, extent=[x[0], x[-1], y[0], y[-1]],
-                       aspect=aspect)
+    if x is None:
+        x_min, x_max = 0, matrix.shape[1]
     else:
-        im = ax.imshow(matrix, interpolation='nearest', cmap=cmap,
-                       vmin=vmin, vmax=vmax, aspect=aspect)
+        x_min, x_max = x[0], x[-1]
+    if y is None:
+        y_min, y_max = 0, matrix.shape[0]
+    else:
+        y_min, y_max = y[0], y[-1]
+
+    im = ax.imshow(matrix, interpolation='nearest', cmap=cmap,
+                   vmin=vmin, vmax=vmax, extent=[x_min, x_max, y_min, y_max],
+                   aspect=aspect, origin='lower')
 
     if fig is not None:
         plt.colorbar(im, shrink=0.6)
@@ -136,7 +140,8 @@ def plot_matrix(matrix, ax=None, x=None, y=None, xlabel=None, ylabel=None,
 
 
 def plot_surf(Z, x=None, y=None, ax=None, xlabel=None, ylabel=None,
-              vmin=None, vmax=None, **kwargs):
+              zlabel=None, zlim=None, vmin=None, vmax=None, cmap_range=None,
+              **kwargs):
     m, n = Z.shape
     if x is None and y is None:
         X, Y = np.meshgrid(np.arange(n), np.arange(m))
@@ -147,19 +152,26 @@ def plot_surf(Z, x=None, y=None, ax=None, xlabel=None, ylabel=None,
         else:
             X, Y = x, y
 
+    if cmap_range is not None:
+        norm = mlp.colors.Normalize(vmin=cmap_range[0], vmax=cmap_range[1])
+    else:
+        norm = None
     basic_settings = {'cmap': cm.coolwarm,
                       'vmin': vmin,
-                      'vmax': vmax}
+                      'vmax': vmax,
+                      'norm': norm}
     basic_settings.update(kwargs)
 
     if ax is None:
-        fig, ax = plt.subplots(subplot_kw={'projection': '3d'})
+        fig, ax = plt.subplots(subplot_kw={'projection': '3d'},
+                               tight_layout=True)
     else:
         fig = None
     surf = ax.plot_surface(X, Y, Z, **basic_settings)
-    ax.set_zlim((vmin, vmax))
+    ax.set_zlim(zlim)
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
+    ax.set_zlabel(zlabel)
     if fig is not None:
         fig.colorbar(surf, shrink=0.6)
     return fig, ax
@@ -222,24 +234,26 @@ def break_plot():
 
 def plot_wav(wav, fs=None, label=None, ax_wav=None, plot_spec=False,
              ax_specgram=None, frame_len=1024, frame_shift=512, yscale='mel',
-             amp_max=None):
+             amp_max=None, **plot_params):
     """plot spectrogram of given len
     Args:
     """
     from . import fft
 
-    n_sample = wav.shape[0]
-    n_frame = np.int(np.floor(np.float32(n_sample-frame_len)/frame_shift)+1)
+    wav_len = wav.shape[0]
     n_bin = int(frame_len/2)
 
     if fs is None:
         fs = 1
-        freq_norm_factor = 1
         t_label = 'sample(n)'
         freq_label = 'normalizeed frequnecy'
     else:
-        freq_norm_factor = 1
-        t_label = 'time(s)'
+        if wav_len < fs*0.05:
+            t_scale = 1000
+            t_label = 'time(ms)'
+        else:
+            t_scale = 1
+            t_label = 'time(s)'
         freq_label = 'frequnecy(Hz)'
 
     fig = None
@@ -248,17 +262,17 @@ def plot_wav(wav, fs=None, label=None, ax_wav=None, plot_spec=False,
         if ax_wav is None and ax_specgram is None:
             fig, ax = plt.subplots(2, 1)
             ax_wav, ax_specgram = ax
-        else:
-            fig, ax = plt.subplots(1, 1)
+    else:
+        if ax_wav is None:
+            fig, ax_wav = plt.subplots(1, 1)
+            print('here')
 
-    if amp_max is None:
-        amp_max = np.max(np.abs(wav))
     if ax_wav is not None:
-        t = np.arange(n_sample)/fs
-        ax_wav.plot(t, wav, label=label)
-        ax_wav.set_xlim([t[0], t[-1]])
+        t = np.arange(wav_len)/fs*t_scale
+        ax_wav.plot(t, wav, label=label, **plot_params)
         ax_wav.set_xlabel(t_label)
-        ax_wav.set_ylim((-amp_max, amp_max))
+        if amp_max is not None:
+            ax_wav.set_ylim((-amp_max, amp_max))
         ax_wav.set_title(label)
 
     if ax_specgram is not None:
@@ -269,7 +283,7 @@ def plot_wav(wav, fs=None, label=None, ax_wav=None, plot_spec=False,
         min_value = max_value-60
         n_frame, n_bin = specgram_amp.shape
         imshow(ax=ax_specgram, Z=specgram_amp.T,
-               x_lim=[0, t[-1]], y_lim=[0, freqs[-1]/freq_norm_factor],
+               x_lim=[0, t[-1]], y_lim=[0, freqs[-1]],
                vmin=min_value, vmax=max_value, origin='lower')
         ax_specgram.set_yscale('mel')
         ax_specgram.set_xlabel(t_label)
