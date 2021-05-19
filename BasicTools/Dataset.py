@@ -83,6 +83,7 @@ class Dataset(object):
                           for shape in self.output_shapes]
         self.data_bare_left = [np.zeros((0, *shape))
                                for shape in self.output_shapes]
+        self.pb = ProcessBar(len(self.file_paths))
 
 
 class Dataset_combined(object):

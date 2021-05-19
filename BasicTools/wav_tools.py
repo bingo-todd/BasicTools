@@ -5,32 +5,51 @@ import matplotlib.pyplot as plt
 import librosa
 import librosa.display
 import soundfile as sf
+import audioread
 
 
-def read_wav(wav_path, tar_fs=None):
+def read(wav_path, tar_fs=None):
     """ read wav file, implete with soundfile
+    args:
+        wav_path
+        tar_fs
+    returns
+        waveform, fs
     """
     wav_path = os.path.expanduser(wav_path)
-    x, fs = sf.read(wav_path)
-    if tar_fs is not None and tar_fs != fs:
-        x = resample(x, fs, tar_fs)
-        fs = tar_fs
-    return [x.astype(np.float32), fs]
+    try:
+        wav, fs = sf.read(wav_path)
+        if tar_fs is not None and tar_fs != fs:
+            wav = resample(wav, fs, tar_fs)
+            fs = tar_fs
+    except Exception:
+        with audioread.audio_open(wav_path) as f:
+            n_channel = f.channels
+            pcm_16bit_segs = [item for item in f]
+            wav_segs = [np.frombuffer(item, dtype=np.int16)
+                        for item in pcm_16bit_segs]
+            if n_channel > 1:
+                wav_segs = [np.reshape(item, [-1, n_channel])
+                            for item in wav_segs]
+            wav = np.concatenate(wav_segs, axis=0)
+    return [wav, fs]
 
 
-def write_wav(x, fs, wav_path, n_bit=16):
+def write(x, fs, wav_path, n_bit=16):
     """ write wav file,  implete with soundfile
+    args:
+        x, fs, wav_path, n_bit
     """
     wav_path = os.path.expanduser(wav_path)
     subtype = f'PCM_{n_bit}'
     sf.write(file=wav_path, data=x, samplerate=fs, subtype=subtype)
 
 
-def resample(x, orig_fs, tar_fs, axis=0):
+def resample(x, src_fs, tar_fs, axis=0):
     """ resample signal, implete with librosa
     Args:
         x: signal, resampling in the first dimension
-        orig_fs: original sample frequency
+        src_fs: original sample frequency
         tar_fs: target sample frequency
     Returns:
         resampled data
@@ -42,7 +61,7 @@ def resample(x, orig_fs, tar_fs, axis=0):
 
     #
     x = np.asfortranarray(x)
-    x_resampled = librosa.resample(x, orig_fs, tar_fs)
+    x_resampled = librosa.resample(x, src_fs, tar_fs)
     x_resampled = np.asarray(x_resampled)
     x_resampled = x_resampled.T
     return x_resampled
@@ -227,6 +246,14 @@ def cal_delay(x1, x2, method='gcc'):
     return delay
 
 
+def iterable(x):
+    try:
+        [tmp for tmp in x]
+        return True
+    except Exception:
+        return False
+
+
 def gen_wn(shape, ref=None, energy_ratio=0, power=1):
     """Generate Gaussian white noise with either given energy ration related
     to ref signal or given power
@@ -239,6 +266,9 @@ def gen_wn(shape, ref=None, energy_ratio=0, power=1):
     Returns:
         white noise
     """
+    if not iterable(shape):
+        shape = [shape]
+
     wn = np.random.normal(0, 1, size=shape)
     if ref is not None:
         wn = set_snr(wn, ref, energy_ratio)
@@ -260,7 +290,7 @@ def gen_diffuse_wn(brirs_path, record_path, snr, diffuse_wn_path, gpu_id=0):
     brirs = np.load(brirs_path)
     n_azi = brirs.shape[0]
 
-    record, fs = read_wav(record_path)
+    record, fs = read(record_path)
     record_len, n_channel = record.shape
     diffuse_wn = np.zeros([record_len, n_channel], dtype=np.float32)
 
@@ -269,7 +299,7 @@ def gen_diffuse_wn(brirs_path, record_path, snr, diffuse_wn_path, gpu_id=0):
         wn_record = gpu_filter.brir_filter(wn, brirs[azi_i])
         diffuse_wn = diffuse_wn + wn_record
     diffuse_wn = set_snr(diffuse_wn, ref=record, snr=snr)
-    write_wav(diffuse_wn, fs, diffuse_wn_path)
+    write(diffuse_wn, fs, diffuse_wn_path)
 
 
 def VAD(x, frame_len, frame_shift=None, theta=40, is_plot=False):
@@ -340,7 +370,7 @@ def cal_erb(cf):
 def test():
     print('test')
     wav_path = '../examples/data/binaural_1.wav'
-    wav, fs = read_wav(wav_path)
+    wav, fs = read(wav_path)
     x = np.zeros([600, 2])
     x[:, 0] = np.pad(wav[100:600, 0], [50, 50])
     x[:, 1] = np.pad(wav[100:600, 0], [20, 80])

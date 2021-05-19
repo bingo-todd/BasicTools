@@ -125,16 +125,8 @@ def plot_matrix(matrix, ax=None, fig=None, x=None, y=None, xlabel=None,
                 plt.text(j, i, format(matrix[i, j], fmt),
                          horizontalalignment="center",
                          color="white" if matrix[i, j] > thresh else "black")
-        plt.ylabel(xlabel)
-        plt.xlabel(ylabel)
-
-    # tick_labels = list(map(str, range(matrix.shape[0])))
-    # tick_marks = np.arange(matrix.shape[0])
-    # plt.yticks(tick_marks, tick_labels)  # rotation=45)
-
-    # tick_labels = list(map(str, range(matrix.shape[1])))
-    # tick_marks = np.arange(matrix.shape[1])
-    # plt.xticks(tick_marks, tick_labels)
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
 
     return fig, ax
 

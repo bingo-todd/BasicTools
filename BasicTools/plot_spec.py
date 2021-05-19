@@ -9,9 +9,14 @@ from .scale import erb
 
 
 def plot_spec(wav_path, label, frame_len, frame_shift, spec_type='mean',
-              ax=None):
+              linewidth=2, ax=None):
     wav, fs = wav_tools.read_wav(wav_path)
+    if len(wav.shape) == 1:
+        wav = wav[:, np.newaxis]
     wav_len, n_channel = wav.shape
+
+    frame_len = np.int(frame_len*fs/1e3)
+    frame_shift = np.int(frame_shift*fs/1e3)
 
     if ax is None:
         fig, ax = plt.subplots(1, n_channel, tight_layout=True, sharex=True,
@@ -21,22 +26,24 @@ def plot_spec(wav_path, label, frame_len, frame_shift, spec_type='mean',
     else:
         fig = None
 
-    frame_len = np.int(frame_len*fs/1e3)
-    frame_shift = np.int(frame_shift*fs/1e3)
-
     for channel_i in range(n_channel):
         stft, t, freqs = fft.cal_stft(wav[:, channel_i], frame_len=frame_len,
                                       frame_shift=frame_shift, fs=fs)
         stft_amp = np.abs(stft)
         if spec_type == 'mean':
             spec_amp = np.mean(stft_amp, axis=0)
-            ax[channel_i].plot(freqs, spec_amp, label=label, linewidth=2)
+            ax[channel_i].plot(
+                freqs, spec_amp, label=label, linewidth=linewidth)
         elif spec_type == 'range':
             ax[channel_i].fill_between(freqs, np.max(stft_amp, axis=0),
                                        np.min(stft_amp, axis=0))
-            ax[channel_i].plot(freqs, spec_amp, label=label, linewidth=2)
-        xticks = ax[channel_i].get_xticks()
-        ax[channel_i].set_xticklabels([f'{i/1000}' for i in xticks])
+            ax[channel_i].plot(
+                freqs, spec_amp, label=label, linewidth=linewidth)
+        ax[channel_i].set_xlim([freqs[0], freqs[-1]])
+        ax[channel_i].xaxis.set_major_formatter(lambda x, pos: f'{x/1000}')
+        plt.setp(
+            ax[channel_i].get_xticklabels(), rotation=30,
+            horizontalalignment='right')
         ax[channel_i].set_xlabel('freq(kHz)')
         ax[channel_i].set_xscale('erb')
         ax[channel_i].set_yscale('log')
@@ -54,6 +61,8 @@ def parse_args():
                         help='frame length in ms')
     parser.add_argument('--frame-shift', dest='frame_shift', type=int,
                         default=10, help='frame shift in ms')
+    parser.add_argument('--linewidth', dest='linewidth', type=int,
+                        default=2, help='')
     parser.add_argument('--fig-path', dest='fig_path', type=str, default=None,
                         help='')
     parser.add_argument('--interactive', dest='interactive', type=str,
@@ -73,7 +82,8 @@ def main():
     fig, ax = plot_spec(wav_path=args.wav_path[0],
                         label=label[0],
                         frame_len=args.frame_len,
-                        frame_shift=args.frame_shift)
+                        frame_shift=args.frame_shift,
+                        linewidth=args.linewidth)
 
     if len(args.wav_path) > 1:
         for wav_path_tmp, label_tmp in zip(args.wav_path[1:], label[1:]):
@@ -81,6 +91,7 @@ def main():
                       label=label_tmp,
                       frame_len=args.frame_len,
                       frame_shift=args.frame_shift,
+                      linewidth=args.linewidth,
                       ax=ax)
     ax[-1].legend()
 

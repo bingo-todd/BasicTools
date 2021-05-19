@@ -49,6 +49,8 @@ def parse_args():
                         help='')
     parser.add_argument('--vmax', dest='vmax', type=float, default=None,
                         help='')
+    parser.add_argument('--cmap', dest='cmap', type=str, default='coolwarm',
+                        help='')
     parser.add_argument('--cmap-range', dest='cmap_range', type=float, nargs=2,
                         default=None, help='range for colormap')
     parser.add_argument('--xlim', dest='xlim', type=float, default=None,
@@ -96,6 +98,7 @@ def main():
     else:
         y = None
 
+    cmap = plt.get_cmap(args.cmap)
     if args.type == 'image':
         fig, ax = plot_matrix(matrix,
                               xlabel=args.xlabel,
@@ -106,7 +109,8 @@ def main():
                               vmax=args.vmax,
                               x=x,
                               y=y,
-                              aspect=args.aspect)
+                              aspect=args.aspect,
+                              cmap=cmap)
     else:
         fig, ax = plot_surf(Z=matrix.T,
                             x=x,

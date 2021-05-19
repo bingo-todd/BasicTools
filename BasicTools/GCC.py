@@ -1,5 +1,7 @@
 import numpy as np
 
+from . import wav_tools
+
 
 def _cal_gcc_phat(x1, x2, max_delay, win_f, snr_thd):
     """subfunction of cal_gcc_phat
@@ -34,7 +36,7 @@ def _cal_gcc_phat(x1, x2, max_delay, win_f, snr_thd):
 
 
 def cal_gcc_phat(x1, x2, win_f=np.hanning, max_delay=None,
-                 frame_len=None, shift_len=None, snr_thd=-50):
+                 frame_len=None, frame_shift=None, snr_thd=-50):
     """Calculate general corss-correlation phase-transform
     Args:
         x1,x2: single-channel data
@@ -44,7 +46,7 @@ def cal_gcc_phat(x1, x2, win_f=np.hanning, max_delay=None,
                      and gcc_len: gcc_len=2*max_delay+1
         frame_len: frame length in sample, if not specified, frame_len is
                    set to be signal length
-        shift_len: if not specified, set to frame_len/2
+        frame_shift: if not specified, set to frame_len/2
         snr_thd: allowed amp range,default to -50 dB
     Returns:
         gcc-phat with shape of [gcc_len] or [n_frame,gcc_len]
@@ -52,14 +54,14 @@ def cal_gcc_phat(x1, x2, win_f=np.hanning, max_delay=None,
     if frame_len is None:
         gcc_phat_result = _cal_gcc_phat(x1, x2, max_delay, win_f, snr_thd)
     else:
-        if shift_len is None:
-            shift_len = np.int16(frame_len/2)
+        if frame_shift is None:
+            frame_shift = np.int16(frame_len/2)
         # signal length check
         if x1.shape[0] != x2.shape[0]:
             raise Exception('x1,x2 do not have the same length,\
                              x1:{}, x2:{}'.format(x1.shape[0], x2.shape[0]))
-        frames_x1 = wav_tools.frame_data(x1, frame_len, shift_len)
-        frames_x2 = wav_tools.frame_data(x2, frame_len, shift_len)
+        frames_x1 = wav_tools.frame_data(x1, frame_len, frame_shift)
+        frames_x2 = wav_tools.frame_data(x2, frame_len, frame_shift)
         n_frame = frames_x1.shape[0]
         gcc_phat_result = np.asarray([_cal_gcc_phat(frames_x1[frame_i],
                                                     frames_x2[frame_i],
@@ -105,7 +107,7 @@ def _cal_ccf(x1, x2, max_delay, win_f=np.ones, normalize=False):
     return ccf
 
 
-def cal_ccf(x1, x2, max_delay=None, frame_len=None, shift_len=None,
+def cal_ccf(x1, x2, max_delay=None, frame_len=None, frame_shift=None,
             win_f=np.ones, normalize=False):
     """Calculate cross-correlation function of whole signal or frames
     if frame_len is specified
@@ -117,7 +119,7 @@ def cal_ccf(x1, x2, max_delay=None, frame_len=None, shift_len=None,
                      and ccf_len: ccf_len=2*max_delay+1
         frame_len: frame length, if not specified, treat whole signal
                    as one frame
-        shift_len: if not specified, set to frame_len/2
+        frame_shift: if not specified, set to frame_len/2
         win_f: window function, default to np.ones, rectangle windows
         normalize:
     Returns:
@@ -128,14 +130,14 @@ def cal_ccf(x1, x2, max_delay=None, frame_len=None, shift_len=None,
     if frame_len is None:
         ccf = _cal_ccf(x1, x2, max_delay, win_f, normalize)
     else:
-        if shift_len is None:
-            shift_len = np.int16(frame_len/2)
+        if frame_shift is None:
+            frame_shift = np.int16(frame_len/2)
         # signal length check
         if x1.shape[0] != x2.shape[0]:
             raise Exception('x1,x2 do not have the same length,\
                              x1:{}, x2:{}'.format(x1.shape[0], x2.shape[0]))
-        frames_x1 = wav_tools.frame_data(x1, frame_len, shift_len)
-        frames_x2 = wav_tools.frame_data(x2, frame_len, shift_len)
+        frames_x1 = wav_tools.frame_data(x1, frame_len, frame_shift)
+        frames_x2 = wav_tools.frame_data(x2, frame_len, frame_shift)
         n_frame = frames_x1.shape[0]
         ccf = np.asarray([_cal_ccf(frames_x1[i], frames_x2[i],
                                    max_delay, win_f, normalize)
@@ -190,7 +192,7 @@ def test_ccf():
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
     # from matplotlib import cm
-    from BasicTools import wav_tools
+    # from BasicTools import wav_tools
     # from . import wav_tools
 
     test_ccf()
