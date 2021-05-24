@@ -5,15 +5,17 @@ terminal interface for plot_tools.plot_wav
 
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.gridspec import GridSpec
 import argparse
+
 from . import wav_tools
 from . import plot_tools
 
 
-def plot_wav(wav_path, ax=None, fig_path=None, mix_channel=False, dpi=100,
-             interactive=False):
+def plot_wav(wav_path, frame_len=320, ax=None, fig_path=None,
+             mix_channel=False, dpi=100, interactive=False):
 
-    wav, fs = wav_tools.read_wav(wav_path)
+    wav, fs = wav_tools.read(wav_path)
     # make wav 2d ndarray
     if len(wav.shape) == 1:
         wav = wav[:, np.newaxis]
@@ -39,6 +41,7 @@ def plot_wav(wav_path, ax=None, fig_path=None, mix_channel=False, dpi=100,
     for channel_i in range(n_channel):
         plot_tools.plot_wav(wav=wav[:, channel_i],
                             fs=fs,
+                            frame_len=frame_len,
                             label=f'channel_{channel_i}',
                             ax_wav=ax[0, channel_i],
                             ax_specgram=ax[1, channel_i],
@@ -61,6 +64,8 @@ def parse_args():
     parser.add_argument('--plot-spec', dest='plot_spec', type=str,
                         default='True', choices=['true', 'false'],
                         help='whether to plot the spectrum')
+    parser.add_argument('--frame-len', dest='frame_len', type=int,
+                        default=320, help='')
     parser.add_argument('--mix-channel', dest='mix_channel', type=str,
                         default='false', choices=['true', 'false'], help='')
     parser.add_argument('--interactive', dest='interactive', type=str,
@@ -73,19 +78,24 @@ def parse_args():
 def main():
     args = parse_args()
     n_wav = len(args.wav_path)
+
     if args.mix_channel == 'true':
-        fig, ax = plt.subplots(2, n_wav)
-        if n_wav == 1:
-            ax = ax[:, np.newaxis]
+        # fig, ax = plt.subplots(2, n_wav, constrained_layout=True)
+        fig = plt.figure(figsize=[12, 6], constrained_layout=True)
+        gs = GridSpec(3, n_wav, figure=fig)
         for wav_i in range(n_wav):
+            ax_wav = fig.add_subplot(gs[0, wav_i])
+            ax_spec = fig.add_subplot(gs[1:, wav_i], sharex=ax_wav)
             plot_wav(wav_path=args.wav_path[wav_i],
-                     ax=ax[:, wav_i:wav_i+1],
+                     ax=np.asarray([ax_wav, ax_spec]),
+                     frame_len=args.frame_len,
                      mix_channel=True)
     else:
-        fig, ax = plt.subplots(2, 2)
+        fig, ax = plt.subplots(2, 2, constrained_layout=True)
         for wav_i in range(n_wav):
             plot_wav(wav_path=args.wav_path[wav_i],
                      ax=ax,
+                     frame_len=args.frame_len,
                      mix_channel=False)
 
     if args.interactive == 'true':

@@ -10,7 +10,7 @@ from .scale import erb
 
 def plot_spec(wav_path, label, frame_len, frame_shift, spec_type='mean',
               linewidth=2, ax=None):
-    wav, fs = wav_tools.read_wav(wav_path)
+    wav, fs = wav_tools.read(wav_path)
     if len(wav.shape) == 1:
         wav = wav[:, np.newaxis]
     wav_len, n_channel = wav.shape

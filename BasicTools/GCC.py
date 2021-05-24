@@ -150,7 +150,7 @@ def test_ccf_phat(frame_len=320, max_delay=18):
     snr_thd:default,-50
     """
     wav_path = '../examples/data/binaural_pos4.wav'
-    wav, fs = wav_tools.read_wav(wav_path)
+    wav, fs = wav_tools.read(wav_path)
 
     gcc_phat_rect = cal_gcc_phat(wav[:, 0], wav[:, 1], frame_len=frame_len,
                                  win_f=np.ones, max_delay=max_delay)
@@ -168,7 +168,7 @@ def test_ccf():
     max_delay = 44
 
     wav_path = '../examples/data/binaural_pos4.wav'
-    wav, fs = wav_tools.read_wav(wav_path)
+    wav, fs = wav_tools.read(wav_path)
     wav_len = wav.shape[0]
 
     ccf_fft = cal_ccf(wav[:, 0], wav[:, 1], max_delay=max_delay,

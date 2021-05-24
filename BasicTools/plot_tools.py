@@ -11,7 +11,7 @@ from functools import wraps
 from .scale import mel, erb
 
 plt.rcParams['font.sans-serif'] = ['SimHei']
-plt.rcParams['font.size'] = 12
+# plt.rcParams['font.size'] = 12
 plt.rcParams['axes.unicode_minus'] = False
 plt.rcParams['lines.linewidth'] = 2
 plt.rcParams['figure.dpi'] = 200
@@ -225,7 +225,7 @@ def break_plot():
 
 
 def plot_wav(wav, fs=None, label=None, ax_wav=None, plot_spec=False,
-             ax_specgram=None, frame_len=1024, frame_shift=512, yscale='mel',
+             ax_specgram=None, frame_len=320, frame_shift=160, yscale='mel',
              amp_max=None, **plot_params):
     """plot spectrogram of given len
     Args:
@@ -252,7 +252,7 @@ def plot_wav(wav, fs=None, label=None, ax_wav=None, plot_spec=False,
     # if ax_wav and ax_specgram are not specified
     if plot_spec:
         if ax_wav is None and ax_specgram is None:
-            fig, ax = plt.subplots(2, 1)
+            fig, ax = plt.subplots(2, 1, constained_layout=True)
             ax_wav, ax_specgram = ax
     else:
         if ax_wav is None:
@@ -263,14 +263,16 @@ def plot_wav(wav, fs=None, label=None, ax_wav=None, plot_spec=False,
         t = np.arange(wav_len)/fs*t_scale
         ax_wav.plot(t, wav, label=label, **plot_params)
         ax_wav.set_xlabel(t_label)
+        ax_wav.set_xlim([t[0], t[-1]])
         if amp_max is not None:
             ax_wav.set_ylim((-amp_max, amp_max))
-        ax_wav.set_title(label)
 
     if ax_specgram is not None:
-        specgram, t, freqs = fft.cal_stft(wav, frame_len=frame_len,
-                                          frame_shift=frame_shift, fs=fs)
-        specgram_amp = 20*np.log10(np.abs(specgram))
+        specgram, t, freqs = fft.cal_stft(
+            np.pad(wav, [frame_len, 0]),
+            frame_len=frame_len,
+            frame_shift=frame_shift, fs=fs)
+        specgram_amp = 20*np.log10(np.abs(specgram)+1e-20)
         max_value = np.max(specgram_amp)
         min_value = max_value-60
         n_frame, n_bin = specgram_amp.shape

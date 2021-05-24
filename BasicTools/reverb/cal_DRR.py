@@ -30,8 +30,8 @@ def parse_args():
 def main():
     from .. import wav_tools
     args = parse_args()
-    ir, fs = wav_tools.read_wav(args.ir_path)
-    direct_ir, fs_1 = wav_tools.read_wav(args.direct_ir_path)
+    ir, fs = wav_tools.read(args.ir_path)
+    direct_ir, fs_1 = wav_tools.read(args.direct_ir_path)
     if fs != fs_1:
         raise Exception('sample rate do not match')
     if len(ir.shape) == 1:

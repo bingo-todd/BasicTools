@@ -131,14 +131,14 @@ if __name__ == '__main__':
         azi, wav_i = [np.int16(item) for item in fname_tar[:-4].split('_')]
 
         # record signal
-        record, fs = wav_tools.read_wav(fpath_record)
+        record, fs = wav_tools.read(fpath_record)
         wav_r = np.expand_dims(
                     wav_tools.frame_data(record, frame_len, shift_len),
                     axis=-1)
 
         # direct signal
         fpath_direct = fpath_record.replace('reverb', 'direct')
-        direct, fs = wav_tools.read_wav(fpath_direct)
+        direct, fs = wav_tools.read(fpath_direct)
         wav_d = np.expand_dims(
                     wav_tools.frame_data(direct, frame_len, shift_len),
                     axis=-1)

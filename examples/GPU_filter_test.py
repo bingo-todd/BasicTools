@@ -7,7 +7,7 @@ from BasicTools import wav_tools, plot_tools
 
 def test_brir_filter():
     brir = np.load('data/brir.npy')
-    wav, fs = wav_tools.read_wav('data/tar.wav')
+    wav, fs = wav_tools.read('data/tar.wav')
 
     t_start = time.time()
     record_cpu = wav_tools.brir_filter(wav, brir)

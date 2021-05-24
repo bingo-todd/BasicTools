@@ -72,9 +72,9 @@ def test_ccf():
 
 
 if __name__ == '__main__':
-    x, fs = wav_tools.read_wav('data/binaural_1.wav')
-    x1 = x[100:,0]
-    x2 = x[:,0]
+    x, fs = wav_tools.read('data/binaural_1.wav')
+    x1 = x[100:, 0]
+    x2 = x[:, 0]
     delay = DspTools.cal_delay(x1, x2)
     print(delay)
 
@@ -83,4 +83,3 @@ if __name__ == '__main__':
     print(ccf.shape, x1.shape, x2.shape)
     plt.show()
     plt.savefig('test.png')
-
