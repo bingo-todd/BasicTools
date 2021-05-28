@@ -23,7 +23,7 @@ class Iterator:
     def reach_end(self, n_keep=0):
         """ whether there are n_keep item left
         """
-        return self._item_pointer == self._n_item-n_keep
+        return self._item_pointer == self._n_item-1-n_keep
 
     def next(self):
         """ get next element, None will return if reach the end
