@@ -20,15 +20,15 @@ class Iterator:
         self._n_item = n_item  # number of elements in x
         self._item_pointer = -1   # index of element avaliable new
 
-    def is_done(self, n_keep=0):
+    def reach_end(self, n_keep=0):
         """ whether there are n_keep item left
         """
-        return self._item_pointer == self._n_item-1-n_keep
+        return self._item_pointer == self._n_item-n_keep
 
     def next(self):
         """ get next element, None will return if reach the end
         """
-        if self.is_done():
+        if self.reach_end():
             item = None
         else:
             self._item_pointer += 1

@@ -64,6 +64,8 @@ def parse_args():
     parser.add_argument('--plot-spec', dest='plot_spec', type=str,
                         default='True', choices=['true', 'false'],
                         help='whether to plot the spectrum')
+    parser.add_argument('--cmap', dest='cmap', type=str, default=None,
+                        help='')
     parser.add_argument('--frame-len', dest='frame_len', type=int,
                         default=320, help='')
     parser.add_argument('--mix-channel', dest='mix_channel', type=str,
@@ -79,6 +81,10 @@ def main():
     args = parse_args()
     n_wav = len(args.wav_path)
 
+    cmap = None
+    if args.cmap is not None:
+        cmap = plt.get_cmap(args.cmap)
+
     if args.mix_channel == 'true':
         # fig, ax = plt.subplots(2, n_wav, constrained_layout=True)
         fig = plt.figure(figsize=[12, 6], constrained_layout=True)
@@ -89,14 +95,16 @@ def main():
             plot_wav(wav_path=args.wav_path[wav_i],
                      ax=np.asarray([ax_wav, ax_spec]),
                      frame_len=args.frame_len,
-                     mix_channel=True)
+                     mix_channel=True,
+                     cmap=cmap)
     else:
         fig, ax = plt.subplots(2, 2, constrained_layout=True)
         for wav_i in range(n_wav):
             plot_wav(wav_path=args.wav_path[wav_i],
                      ax=ax,
                      frame_len=args.frame_len,
-                     mix_channel=False)
+                     mix_channel=False,
+                     cmap=cmap)
 
     if args.interactive == 'true':
         plt.show()

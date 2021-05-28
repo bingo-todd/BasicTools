@@ -10,9 +10,9 @@ import pathlib
 from functools import wraps
 from .scale import mel, erb
 
-plt.rcParams['font.sans-serif'] = ['SimHei']
+# plt.rcParams['font.sans-serif'] = ['SimHei']
 # plt.rcParams['font.size'] = 12
-plt.rcParams['axes.unicode_minus'] = False
+# plt.rcParams['axes.unicode_minus'] = False
 plt.rcParams['lines.linewidth'] = 2
 plt.rcParams['figure.dpi'] = 200
 
@@ -226,11 +226,14 @@ def break_plot():
 
 def plot_wav(wav, fs=None, label=None, ax_wav=None, plot_spec=False,
              ax_specgram=None, frame_len=320, frame_shift=160, yscale='mel',
-             amp_max=None, **plot_params):
+             amp_max=None, cmap=None):
     """plot spectrogram of given len
     Args:
     """
     from . import fft
+
+    if cmap is None:
+        cmap = cm.jet
 
     wav_len = wav.shape[0]
     n_bin = int(frame_len/2)
@@ -261,7 +264,7 @@ def plot_wav(wav, fs=None, label=None, ax_wav=None, plot_spec=False,
 
     if ax_wav is not None:
         t = np.arange(wav_len)/fs*t_scale
-        ax_wav.plot(t, wav, label=label, **plot_params)
+        ax_wav.plot(t, wav, label=label)
         ax_wav.set_xlabel(t_label)
         ax_wav.set_xlim([t[0], t[-1]])
         if amp_max is not None:
@@ -278,7 +281,7 @@ def plot_wav(wav, fs=None, label=None, ax_wav=None, plot_spec=False,
         n_frame, n_bin = specgram_amp.shape
         imshow(ax=ax_specgram, Z=specgram_amp.T,
                x_lim=[0, t[-1]], y_lim=[0, freqs[-1]],
-               vmin=min_value, vmax=max_value, origin='lower')
+               vmin=min_value, vmax=max_value, origin='lower', cmap=cmap)
         ax_specgram.set_yscale('mel')
         ax_specgram.set_xlabel(t_label)
         ax_specgram.set_ylabel(freq_label)

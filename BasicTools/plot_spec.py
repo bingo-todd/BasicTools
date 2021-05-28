@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 from . import wav_tools
 from . import fft
-from .scale import erb
+# from .scale import erb
 
 
 def plot_spec(wav_path, label, frame_len, frame_shift, spec_type='mean',
@@ -29,6 +29,7 @@ def plot_spec(wav_path, label, frame_len, frame_shift, spec_type='mean',
     for channel_i in range(n_channel):
         stft, t, freqs = fft.cal_stft(wav[:, channel_i], frame_len=frame_len,
                                       frame_shift=frame_shift, fs=fs)
+        freqs = freqs/1000
         stft_amp = np.abs(stft)
         if spec_type == 'mean':
             spec_amp = np.mean(stft_amp, axis=0)
@@ -39,13 +40,13 @@ def plot_spec(wav_path, label, frame_len, frame_shift, spec_type='mean',
                                        np.min(stft_amp, axis=0))
             ax[channel_i].plot(
                 freqs, spec_amp, label=label, linewidth=linewidth)
-        ax[channel_i].set_xlim([freqs[0], freqs[-1]])
-        ax[channel_i].xaxis.set_major_formatter(lambda x, pos: f'{x/1000}')
-        plt.setp(
-            ax[channel_i].get_xticklabels(), rotation=30,
-            horizontalalignment='right')
+        # ax[channel_i].set_xlim([0.02, freqs[-1]])
+        # ax[channel_i].xaxis.set_major_formatter(lambda x, pos: f'{x/1000}')
+        # plt.setp(
+        #     ax[channel_i].get_xticklabels(), rotation=30,
+        #     horizontalalignment='right')
         ax[channel_i].set_xlabel('freq(kHz)')
-        ax[channel_i].set_xscale('erb')
+        # ax[channel_i].set_xscale('erb')
         ax[channel_i].set_yscale('log')
         ax[channel_i].set_title(f'channel {channel_i}')
     return fig, ax
