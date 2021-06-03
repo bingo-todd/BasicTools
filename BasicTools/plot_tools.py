@@ -17,6 +17,12 @@ plt.rcParams['lines.linewidth'] = 2
 plt.rcParams['figure.dpi'] = 200
 
 
+def get_figsize(n_row, n_col):
+    width = 4.6+2*n_col
+    height = 1+2*n_row
+    return [width, height]
+
+
 def line_collector(plot_func):
     @wraps(plot_func)
     def wrapped_plot_func(ax, *args, line_container=None, **kwargs):

@@ -70,6 +70,9 @@ def get_file_path(dir_path, suffix=None, filter_func=None, is_absolute=False,
                   if file_path_filter(item, suffix, filter_func)]
     if is_absolute:
         file_paths = [get_realpath(item) for item in file_paths]
+    else:
+        file_paths = [os.path.relpath(item, dir_path)
+                      for item in file_paths]
 
     return file_paths
 
