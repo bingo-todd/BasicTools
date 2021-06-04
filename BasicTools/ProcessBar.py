@@ -2,7 +2,7 @@ import numpy as np
 import time
 
 
-class ProcessBar(object):
+class ProgressBar(object):
     def __init__(self, max_value=100, is_show_resrc=False, is_show_time=False):
 
         self.max_value = max_value
@@ -42,7 +42,7 @@ class ProcessBar(object):
 
 if __name__ == '__main__':
 
-    pb = ProcessBar(100)
+    pb = ProgressBar(100)
     for i in range(100):
         time.sleep(0.1)
         pb.update(text='test\n'*(i % 5))

@@ -5,10 +5,10 @@ from multiprocessing import Lock
 from multiprocessing.managers import BaseManager
 
 
-class ProcessBarMulti_base(object):
+class ProgressBarMulti_base(object):
     def __init__(self, max_value_all, token_all=None, desc_all=None,
                  is_show_resrc=False, is_show_time=False):
-        """show process bar of multiple tasks
+        """show progress bar of multiple tasks
         Args:
             max_value_all: maximum iteration of each task
             token_all: token of each task
@@ -86,10 +86,10 @@ class ProcessBarMulti_base(object):
         print('\n'.join(bar_status_str_all))
 
     def update(self, token=None, value=None):
-        """Update process bar of given token
+        """Update progress bar of given token
         Args:
-            token: token to specify process bar
-            value: assign value to process bar directly
+            token: token to specify progress bar
+            value: assign value to progress bar directly
         """
         # with self._lock:
 
@@ -125,7 +125,7 @@ class ProcessBarMulti_base(object):
             self.update(value=0)
 
 
-BaseManager.register('ProcessBarMulti_base', ProcessBarMulti_base)
+BaseManager.register('ProgressBarMulti_base', ProgressBarMulti_base)
 manager = BaseManager()
 manager.start()
-ProcessBarMulti = manager.ProcessBarMulti_base
+ProgressBarMulti = manager.ProgressBarMulti_base

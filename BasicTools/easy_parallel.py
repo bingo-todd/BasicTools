@@ -4,7 +4,7 @@ import numpy as np
 import subprocess
 from subprocess import PIPE
 from multiprocessing import Queue, Process, Manager, Lock
-from BasicTools.ProcessBarMulti import ProcessBarMulti
+from BasicTools.ProgressBarMulti import ProgressBarMulti
 
 
 def get_subprocess_pid(pid):
@@ -67,14 +67,14 @@ def worker(func, lock, tasks_queue, outputs_dict, pb, worker_params,
     return None
 
 
-def easy_parallel(func, tasks, n_worker=8, show_process=False,
+def easy_parallel(func, tasks, n_worker=8, show_progress=False,
                   worker_params=None, dump_dir='dump'):
     """
     Args:
         func: function to be called in parallel
         tasks: list of list or 2 dimension ndarray, arguments of func,
         n_worker: number of processes
-        show_process: show process bar
+        show_progress: show progress bar
         worker_params: params to each worker
     """
 
@@ -90,8 +90,8 @@ def easy_parallel(func, tasks, n_worker=8, show_process=False,
 
     threads = []
     outputs_dict = Manager().dict()
-    if show_process:
-        pb = ProcessBarMulti([len(tasks)])
+    if show_progress:
+        pb = ProgressBarMulti([len(tasks)])
     else:
         pb = None
 
