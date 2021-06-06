@@ -1,6 +1,6 @@
 import numpy as np
 
-from .ProcessBar import ProcessBar
+from .ProgressBar import ProgressBar
 
 
 class Dataset(object):
@@ -27,7 +27,7 @@ class Dataset(object):
                                for shape in output_shapes]
 
         self.show_process = show_process
-        self.pb = ProcessBar(len(self.file_paths))
+        self.pb = ProgressBar(len(self.file_paths))
 
     def _load(self):
         # TODO self.data_bare dtype auto change to float64
@@ -83,7 +83,7 @@ class Dataset(object):
                           for shape in self.output_shapes]
         self.data_bare_left = [np.zeros((0, *shape))
                                for shape in self.output_shapes]
-        self.pb = ProcessBar(len(self.file_paths))
+        self.pb = ProgressBar(len(self.file_paths))
 
 
 class Dataset_combined(object):
