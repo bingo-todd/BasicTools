@@ -2,7 +2,7 @@ import numpy as np
 
 
 class Iterator:
-    def __init__(self, x, shuffle=False):
+    def __init__(self, x, shuffle=True):
         """ x: list or ndarray
         """
 
@@ -43,7 +43,7 @@ class Iterator:
         else:
             self._item_pointer -= n_step
 
-    def reset(self, shuffle=False):
+    def reset(self, shuffle=True):
         if shuffle:
             np.random.shuffle(self.x)
         self._item_pointer = -1

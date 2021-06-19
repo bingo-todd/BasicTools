@@ -23,6 +23,13 @@ def get_figsize(n_row, n_col):
     return [width, height]
 
 
+def subplots(n_row, n_col, **kwargs):
+    figsize = get_figsize(n_row, n_col)
+    fig, ax = plt.subplots(
+        n_row, n_col, figsize=figsize, constrained_layout=True, **kwargs)
+    return fig, ax
+
+
 def line_collector(plot_func):
     @wraps(plot_func)
     def wrapped_plot_func(ax, *args, line_container=None, **kwargs):
@@ -120,7 +127,7 @@ def plot_matrix(matrix, ax=None, fig=None, x=None, y=None, xlabel=None,
                    aspect=aspect, origin='lower')
 
     if fig is not None:
-        plt.colorbar(im, shrink=0.6)
+        plt.colorbar(im, ax=ax, shrink=0.6)
 
     # x_axis: colum  y_axis: row
     if show_value:
@@ -246,6 +253,7 @@ def plot_wav(wav, fs=None, label=None, ax_wav=None, plot_spec=False,
 
     if fs is None:
         fs = 1
+        t_scale = 1
         t_label = 'sample(n)'
         freq_label = 'normalizeed frequnecy'
     else:

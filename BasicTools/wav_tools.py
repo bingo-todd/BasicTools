@@ -35,7 +35,7 @@ def read(wav_path, tar_fs=None):
     return [wav, fs]
 
 
-def write(x, fs, wav_path, n_bit=16):
+def write(x, fs, wav_path, n_bit=24):
     """ write wav file,  implete with soundfile
     args:
         x, fs, wav_path, n_bit
