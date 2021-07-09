@@ -4,51 +4,65 @@ import matplotlib.pyplot as plt
 
 
 from . import wav_tools
+from . import plot_tools
 from . import fft
 # from .scale import erb
 
 
-def plot_spec(wav_path, label, frame_len, frame_shift, spec_type='mean',
-              linewidth=2, ax=None):
-    wav, fs = wav_tools.read(wav_path)
+def plot_spec(wav, frame_len=1024, frame_shift=None, fs=None,
+              spec_type='spectrogram', label=None, ax=None, fig=None):
+    """
+    Args:
+        wav: waveform
+        frame_len: frame length of fft, default to be 1024
+        frame_shift: default to half of frame_len
+        label:
+    """
+    # ensure wav is two-dimension array, [wav_len, n_chann]
     if len(wav.shape) == 1:
         wav = wav[:, np.newaxis]
-    wav_len, n_channel = wav.shape
+    wav_len, n_chann = wav.shape
 
-    frame_len = np.int(frame_len*fs/1e3)
-    frame_shift = np.int(frame_shift*fs/1e3)
+    # stft
+    stft = fft.cal_stft(wav, frame_len=frame_len, frame_shift=frame_shift)
+    stft_amp = 20*np.log10(stft**2+1e-20)
+    n_frame, n_freq_bin, _ = stft.shape
 
+    # visualization
     if ax is None:
-        fig, ax = plt.subplots(1, n_channel, tight_layout=True, sharex=True,
-                               sharey=True, figsize=[6.4+2*(n_channel-1), 4.8])
-        if n_channel == 1:
+        fig, ax = plot_tools.subplots(1, n_chann, sharex=True, sharey=True)
+        if n_chann == 1:
             ax = [ax]
+    if fs is not None:
+        t = np.arange(n_frame)*frame_shift/fs
+        freq_bins = np.arange(n_freq_bin)/frame_len*fs
     else:
-        fig = None
+        t = np.arange(n_frame)*frame_shift
+        freq_bins = np.arange(n_freq_bin)/frame_len
+    for chann_i in range(n_chann):
+        if spec_type == 'spectrogram':
+            plot_tools.plot_matrix(
+                stft_amp[:, :, chann_i].T, x=t, y=freq_bins, ax=ax[chann_i])
+        elif spec_type == 'spectrum':
+            ax[chann_i].plot(
+                freq_bins, np.mean(stft_amp[:, :, chann_i], axis=0))
+    if spec_type == 'spectrogram':
+        if fs is not None:
+            ax[0].set_ylabel('freq(Hz)')
+            for chann_i in range(n_chann):
+                ax[chann_i].set_xlabel('time(s)')
+        else:
+            ax[0].set_ylabel('normalized freq')
+            for chann_i in range(n_chann):
+                ax[chann_i].set_xlabel('sample')
+    elif spec_type == 'spectrum':
+        if fs is not None:
+            for chann_i in range(n_chann):
+                ax[chann_i].set_xlabel('freq(Hz)')
+        else:
+            for chann_i in range(n_chann):
+                ax[chann_i].set_xlabel('normalized freq')
 
-    for channel_i in range(n_channel):
-        stft, t, freqs = fft.cal_stft(wav[:, channel_i], frame_len=frame_len,
-                                      frame_shift=frame_shift, fs=fs)
-        freqs = freqs/1000
-        stft_amp = np.abs(stft)
-        if spec_type == 'mean':
-            spec_amp = np.mean(stft_amp, axis=0)
-            ax[channel_i].plot(
-                freqs, spec_amp, label=label, linewidth=linewidth)
-        elif spec_type == 'range':
-            ax[channel_i].fill_between(freqs, np.max(stft_amp, axis=0),
-                                       np.min(stft_amp, axis=0))
-            ax[channel_i].plot(
-                freqs, spec_amp, label=label, linewidth=linewidth)
-        # ax[channel_i].set_xlim([0.02, freqs[-1]])
-        # ax[channel_i].xaxis.set_major_formatter(lambda x, pos: f'{x/1000}')
-        # plt.setp(
-        #     ax[channel_i].get_xticklabels(), rotation=30,
-        #     horizontalalignment='right')
-        ax[channel_i].set_xlabel('freq(kHz)')
-        # ax[channel_i].set_xscale('erb')
-        ax[channel_i].set_yscale('log')
-        ax[channel_i].set_title(f'channel {channel_i}')
     return fig, ax
 
 
@@ -80,6 +94,7 @@ def main():
     else:
         label = args.label
 
+    wav, fs = wav_tools.read(wav_path)
     fig, ax = plot_spec(wav_path=args.wav_path[0],
                         label=label[0],
                         frame_len=args.frame_len,

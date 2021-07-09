@@ -12,42 +12,34 @@ from . import wav_tools
 from . import plot_tools
 
 
-def plot_wav(wav_path, frame_len=320, ax=None, fig_path=None,
-             mix_channel=False, dpi=100, interactive=False):
+def plot_wav(wav_path, frame_len=320, ax=None, fig=None, fig_path=None,
+             mix_channel=False, cmap=None, dpi=100, interactive=False):
 
     wav, fs = wav_tools.read(wav_path)
     # make wav 2d ndarray
     if len(wav.shape) == 1:
         wav = wav[:, np.newaxis]
-    n_channel = wav.shape[1]
-
-    amp_max = np.max(np.abs(wav))
-
-    if mix_channel:
-        n_col = 1  # plot all channel in one figure
-    else:
-        n_col = n_channel
+    n_chann = wav.shape[1]
 
     if ax is None:
-        fig, ax = plt.subplots(2, n_col, tight_layout=True)
-    else:
-        fig = None
-        if len(ax.shape) < 2:
-            ax = ax[:, np.newaxis]
+        if mix_channel:
+            fig, ax = plot_tools.subplots(2, 1, sharex=True)
+        else:
+            fig, ax = plot_tools.subplots(2, n_chann, sharex=True)
 
-    if n_col == 1 and n_channel > 1:
-        ax = np.repeat(ax, n_channel, axis=1)
-
-    for channel_i in range(n_channel):
-        plot_tools.plot_wav(wav=wav[:, channel_i],
-                            fs=fs,
-                            frame_len=frame_len,
-                            label=f'channel_{channel_i}',
-                            ax_wav=ax[0, channel_i],
-                            ax_specgram=ax[1, channel_i],
-                            amp_max=amp_max)
+    if len(ax.shape) == 1:
+        ax = ax[:, np.newaxis]
     if mix_channel:
-        ax[0, channel_i].legend()
+        ax = np.repeat(ax, n_chann, axis=1)
+
+    max_amp = np.max(np.abs(wav))
+    for chann_i in range(n_chann):
+        plot_tools.plot_wav(
+            wav=wav[:, chann_i], fs=fs, frame_len=frame_len,
+            label=f'channel_{chann_i}', ax_wav=ax[0, chann_i],
+            ax_specgram=ax[1, chann_i], max_amp=max_amp, cmap=cmap)
+    if mix_channel:
+        ax[0, chann_i].legend()
 
     if fig_path is not None:
         fig.savefig(fig_path, dpi=dpi)
@@ -86,31 +78,37 @@ def main():
         cmap = plt.get_cmap(args.cmap)
 
     if args.mix_channel == 'true':
-        # fig, ax = plt.subplots(2, n_wav, constrained_layout=True)
-        fig = plt.figure(figsize=[12, 6], constrained_layout=True)
-        gs = GridSpec(3, n_wav, figure=fig)
+        fig, ax = plot_tools.subplots(2, n_wav, sharex=True)
         for wav_i in range(n_wav):
-            ax_wav = fig.add_subplot(gs[0, wav_i])
-            ax_spec = fig.add_subplot(gs[1:, wav_i], sharex=ax_wav)
-            plot_wav(wav_path=args.wav_path[wav_i],
-                     ax=np.asarray([ax_wav, ax_spec]),
-                     frame_len=args.frame_len,
-                     mix_channel=True,
-                     cmap=cmap)
+            plot_wav(
+                wav_path=args.wav_path[wav_i], ax=ax[:, wav_i],
+                frame_len=args.frame_len, mix_channel=True, cmap=cmap)
     else:
-        fig, ax = plt.subplots(2, 2, constrained_layout=True)
+        max_chann_num = 1
+        for wav_path in args.wav_path:
+            tmp_wav, fs = wav_tools.read(wav_path)
+            if len(tmp_wav.shape) == 2 and max_chann_num < tmp_wav.shape[1]:
+                max_chann_num = tmp_wav.shape[1]
+        fig, ax = plot_tools.subplots(2, n_wav*max_chann_num, sharex=True)
         for wav_i in range(n_wav):
-            plot_wav(wav_path=args.wav_path[wav_i],
-                     ax=ax,
-                     frame_len=args.frame_len,
-                     mix_channel=False,
-                     cmap=cmap)
+            ax_slice = slice(wav_i*max_chann_num, (wav_i+1)*max_chann_num)
+            plot_wav(
+                wav_path=args.wav_path[wav_i], ax=ax[ax_slice],
+                frame_len=args.frame_len, mix_channel=False, cmap=cmap)
+
+    n_row, n_col = ax.shape
+    if n_row > 1:
+        # remove xlabel of wav if spec is ploted below
+        for i in range(n_row-1):
+            for ax_tmp in ax[i]:
+                ax_tmp.set_xlabel('')
 
     if args.interactive == 'true':
         plt.show()
 
     if args.fig_path is not None:
         fig.savefig(args.fig_path, dpi=args.dpi)
+        print(f'fig is saved to {args.fig_path}')
 
 
 if __name__ == '__main__':

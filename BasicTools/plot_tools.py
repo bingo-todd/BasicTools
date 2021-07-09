@@ -8,18 +8,32 @@ import datetime
 from PIL import Image
 import pathlib
 from functools import wraps
-from .scale import mel, erb
 
-# plt.rcParams['font.sans-serif'] = ['SimHei']
-# plt.rcParams['font.size'] = 12
-# plt.rcParams['axes.unicode_minus'] = False
+import GTF
+
+from .scale import mel, erb
+from . import fft
+
+plt.rcParams['font.sans-serif'] = ['SimSun']
+plt.rcParams['font.size'] = 12
+plt.rcParams['axes.unicode_minus'] = False
 plt.rcParams['lines.linewidth'] = 2
+plt.rcParams['legend.fontsize'] = 12
+
+plt.rcParams['mathtext.fontset'] = 'custom'
+plt.rcParams['mathtext.bf'] = 'Cambria:bold'
+plt.rcParams['mathtext.cal'] = 'Cambria'
+plt.rcParams['mathtext.rm'] = 'Cambria'
+plt.rcParams['mathtext.sf'] = 'Cambria'
+plt.rcParams['mathtext.tt'] = 'Cambria'
+plt.rcParams['mathtext.it'] = 'Cambria:italic'
+
 plt.rcParams['figure.dpi'] = 200
 
 
 def get_figsize(n_row, n_col):
-    width = 4.6+2*n_col
-    height = 1+2*n_row
+    width = 2.5+2*n_col
+    height = 1.5+2*n_row
     return [width, height]
 
 
@@ -73,7 +87,7 @@ def plot_contour(ax, *args, is_label=False, line_container=None, **kwargs):
 
 def imshow(Z, ax=None, x_lim=None, y_lim=None, vmin=None, vmax=None, **kwargs):
     if ax is None:
-        fig, ax = plt.subplots(1, 1)
+        fig, ax = subplots(1, 1)
     else:
         fig = None
 
@@ -94,7 +108,7 @@ def imshow(Z, ax=None, x_lim=None, y_lim=None, vmin=None, vmax=None, **kwargs):
     return fig, ax
 
 
-def plot_matrix(matrix, ax=None, fig=None, x=None, y=None, xlabel=None,
+def plot_matrix(matrix, x=None, y=None, ax=None, fig=None, xlabel=None,
                 ylabel=None, show_value=False, normalize=True, vmin=None,
                 vmax=None, aspect='auto', cmap=plt.cm.coolwarm):
     """
@@ -111,20 +125,19 @@ def plot_matrix(matrix, ax=None, fig=None, x=None, y=None, xlabel=None,
     """
 
     if ax is None:
-        fig, ax = plt.subplots(1, 1, tight_layout=True)
+        fig, ax = subplots(1, 1)
 
     if x is None:
-        x_min, x_max = 0, matrix.shape[1]
-    else:
-        x_min, x_max = x[0], x[-1]
+        x = np.arange(matrix.shape[1])
     if y is None:
-        y_min, y_max = 0, matrix.shape[0]
-    else:
-        y_min, y_max = y[0], y[-1]
+        y = np.arange(matrix.shape[0])
 
-    im = ax.imshow(matrix, interpolation='nearest', cmap=cmap,
-                   vmin=vmin, vmax=vmax, extent=[x_min, x_max, y_min, y_max],
-                   aspect=aspect, origin='lower')
+    im = ax.pcolormesh(
+        x, y, matrix, cmap=cmap, vmin=vmin, vmax=vmax, shading='auto')
+
+    # im = ax.imshow(matrix, interpolation='nearest', cmap=cmap,
+    #                vmin=vmin, vmax=vmax, extent=[x_min, x_max, y_min, y_max],
+    #                aspect=aspect, origin='lower')
 
     if fig is not None:
         plt.colorbar(im, ax=ax, shrink=0.6)
@@ -168,8 +181,8 @@ def plot_surf(Z, x=None, y=None, ax=None, xlabel=None, ylabel=None,
     basic_settings.update(kwargs)
 
     if ax is None:
-        fig, ax = plt.subplots(subplot_kw={'projection': '3d'},
-                               tight_layout=True)
+        fig, ax = plt.subplots(
+            subplot_kw={'projection': '3d'}, constrained_layout=True)
     else:
         fig = None
     surf = ax.plot_surface(X, Y, Z, **basic_settings)
@@ -178,7 +191,7 @@ def plot_surf(Z, x=None, y=None, ax=None, xlabel=None, ylabel=None,
     ax.set_ylabel(ylabel)
     ax.set_zlabel(zlabel)
     if fig is not None:
-        fig.colorbar(surf, shrink=0.6)
+        fig.colorbar(surf, shrink=0.6, pad=0.15)
     return fig, ax
 
 
@@ -239,7 +252,7 @@ def break_plot():
 
 def plot_wav(wav, fs=None, label=None, ax_wav=None, plot_spec=False,
              ax_specgram=None, frame_len=320, frame_shift=160, yscale='mel',
-             amp_max=None, cmap=None):
+             max_amp=None, cmap=None):
     """plot spectrogram of given len
     Args:
     """
@@ -254,16 +267,16 @@ def plot_wav(wav, fs=None, label=None, ax_wav=None, plot_spec=False,
     if fs is None:
         fs = 1
         t_scale = 1
-        t_label = 'sample(n)'
-        freq_label = 'normalizeed frequnecy'
+        t_label = '采样点(n)'
+        freq_label = '归一化频率'
     else:
         if wav_len < fs*0.05:
             t_scale = 1000
-            t_label = 'time(ms)'
+            t_label = '时间(ms)'
         else:
             t_scale = 1
-            t_label = 'time(s)'
-        freq_label = 'frequnecy(Hz)'
+            t_label = '时间(s)'
+        freq_label = '频率(Hz)'
 
     fig = None
     # if ax_wav and ax_specgram are not specified
@@ -273,28 +286,28 @@ def plot_wav(wav, fs=None, label=None, ax_wav=None, plot_spec=False,
             ax_wav, ax_specgram = ax
     else:
         if ax_wav is None:
-            fig, ax_wav = plt.subplots(1, 1)
-            print('here')
+            fig, ax_wav = subplots(1, 1)
 
     if ax_wav is not None:
         t = np.arange(wav_len)/fs*t_scale
         ax_wav.plot(t, wav, label=label)
         ax_wav.set_xlabel(t_label)
         ax_wav.set_xlim([t[0], t[-1]])
-        if amp_max is not None:
-            ax_wav.set_ylim((-amp_max, amp_max))
+        if max_amp is not None:
+            ax_wav.set_ylim((-max_amp, max_amp))
 
     if ax_specgram is not None:
-        specgram, t, freqs = fft.cal_stft(
+        specgram = fft.cal_stft(
             np.pad(wav, [frame_len, 0]),
-            frame_len=frame_len,
-            frame_shift=frame_shift, fs=fs)
+            frame_len=frame_len, frame_shift=frame_shift)[:, :, 0]
         specgram_amp = 20*np.log10(np.abs(specgram)+1e-20)
         max_value = np.max(specgram_amp)
         min_value = max_value-60
         n_frame, n_bin = specgram_amp.shape
+        t = np.arange(n_frame)*frame_shift/fs/t_scale
+        freq_bins = np.arange(n_bin)/frame_len*fs/1e3
         imshow(ax=ax_specgram, Z=specgram_amp.T,
-               x_lim=[0, t[-1]], y_lim=[0, freqs[-1]],
+               x_lim=[0, t[-1]], y_lim=[0, freq_bins[-1]],
                vmin=min_value, vmax=max_value, origin='lower', cmap=cmap)
         ax_specgram.set_yscale('mel')
         ax_specgram.set_xlabel(t_label)
@@ -302,6 +315,105 @@ def plot_wav(wav, fs=None, label=None, ax_wav=None, plot_spec=False,
         # ax_specgram.yaxis.set_major_formatter('{x:.1f}')
         #
     return fig, ax_wav, ax_specgram
+
+
+def plot_spectrogram(wav, frame_len=1024, frame_shift=None, fs=None,
+                     use_gtf=False, cfs=None,
+                     freq_low=None, freq_high=None, n_band=None,
+                     ax=None, fig=None):
+    """
+    Args:
+        wav: waveform
+        frame_len: frame length of fft, default to be 1024
+        frame_shift: default to half of frame_len
+    """
+
+    # ensure wav is two-dimension array, [wav_len, n_chann]
+    wav = np.squeeze(wav)
+    if len(wav.shape) > 1:
+        raise Exception('only single channel is supported')
+    wav_len = wav.shape[0]
+
+    if frame_shift is None:
+        frame_shift = np.int(frame_len/2)
+
+    if fs is None:
+        fs = 1
+        t_scale = 1
+        t_label = '采样点(n)'
+        freq_label = '归一化频率'
+    else:
+        if wav_len < fs*0.05:
+            t_scale = 1000
+            t_label = '时间(ms)'
+        else:
+            t_scale = 1
+            t_label = '时间(s)'
+        freq_label = '频率(kHz)'
+
+    if ax is None:
+        fig, ax = subplots(1, 1)
+    if use_gtf:
+        specgram_amp, cfs = GTF.cal_spectrogram(
+            wav[:, np.newaxis], frame_len=frame_len, frame_shift=frame_shift,
+            fs=fs, cfs=cfs, freq_low=freq_low, freq_high=freq_high,
+            n_band=n_band, return_cfs=True)
+        specgram_amp = specgram_amp[:, :, 0]
+        freqs = cfs
+    else:
+        specgram = fft.cal_stft(
+            np.pad(wav[:, np.newaxis], [[frame_len, frame_len], [0, 0]]),
+            frame_len=frame_len, frame_shift=frame_shift)[:, :, 0]
+        specgram_amp = 20*np.log10(np.abs(specgram)+1e-20)
+        n_freq_bin = specgram_amp.shape[1]
+        freqs = np.arange(n_freq_bin)/frame_len*fs
+
+    max_value = np.max(specgram_amp)
+    min_value = max_value-60
+    n_frame = specgram_amp.shape[0]
+    t = np.arange(n_frame)*frame_shift/fs/t_scale
+    plot_matrix(
+        specgram_amp.T,
+        x=t, y=freqs,
+        vmin=min_value, vmax=max_value,
+        ax=ax, fig=fig)
+    ax.set_xlabel(t_label)
+    ax.set_yscale('mel')
+    ax.yaxis.set_major_formatter(lambda x, pos: f'{x*1e-3}')
+    ax.set_ylabel(freq_label)
+    return fig, ax
+
+
+def plot_spectrum(wav, fs=None, ax=None, fig=None):
+    """
+    Args:
+        wav: waveform
+    """
+
+    # ensure wav is two-dimension array, [wav_len, n_chann]
+    if len(wav.shape) == 1:
+        wav = wav[:, np.newaxis]
+    wav_len, n_chann = wav.shape
+
+    if fs is None:
+        fs = 1
+        freq_label = '归一化频率'
+    else:
+        freq_label = '频率(Hz)'
+
+    if ax is None:
+        fig, ax = subplots(1, 1)
+
+    spectrum = np.fft.fft(wav)
+    spectrum_amp = 20*np.log10(np.abs(spectrum)+1e-20)
+    n_freq_bin = spectrum.shape[0]
+    n_freq_bin_valid = np.int(np.floor(n_freq_bin/2)+1)
+    freq_bins = np.arange(n_freq_bin_valid)/n_freq_bin*fs
+    ax.plot(freq_bins, spectrum_amp[n_freq_bin_valid])
+    ax.set_xscale('mel')
+    ax.set_xlabel(freq_label)
+    ax.set_ylabel('dB')
+    return fig, ax
 
 
 def plot_break_axis(x1, x2):
