@@ -15,10 +15,10 @@ from .scale import mel, erb
 from . import fft
 
 plt.rcParams['font.sans-serif'] = ['SimSun']
-plt.rcParams['font.size'] = 12
+plt.rcParams['font.size'] = 10
 plt.rcParams['axes.unicode_minus'] = False
 plt.rcParams['lines.linewidth'] = 2
-plt.rcParams['legend.fontsize'] = 12
+plt.rcParams['legend.fontsize'] = 10
 
 plt.rcParams['mathtext.fontset'] = 'custom'
 plt.rcParams['mathtext.bf'] = 'Cambria:bold'
@@ -38,9 +38,10 @@ def get_figsize(n_row, n_col):
 
 
 def subplots(n_row, n_col, **kwargs):
-    figsize = get_figsize(n_row, n_col)
+    if 'figsize' not in kwargs.keys():
+        kwargs['figsize'] = get_figsize(n_row, n_col)
     fig, ax = plt.subplots(
-        n_row, n_col, figsize=figsize, constrained_layout=True, **kwargs)
+        n_row, n_col, constrained_layout=True, **kwargs)
     return fig, ax
 
 
@@ -104,7 +105,22 @@ def imshow(Z, ax=None, x_lim=None, y_lim=None, vmin=None, vmax=None, **kwargs):
                       'aspect': 'auto'}
     basic_settings.update(kwargs)
 
-    ax.imshow(Z_norm, extent=[*x_lim, *y_lim], **basic_settings)
+    ax.imshow(
+        Z_norm, extent=[*x_lim, *y_lim], **basic_settings, origin='lower')
+    return fig, ax
+
+
+def plot_distribute(x=None, y=None, ax=None, fig=None):
+    if x is None:
+        x = np.arange(y.shape[0])
+    y_mean = np.mean(y, axis=1)
+    y_std = np.std(y, axis=1)
+
+    if ax is None:
+        fig, ax = subplots(1, 1)
+
+    ax.plot(x, y_mean)
+    ax.fill_between(x, y_mean-y_std/2, y_mean+y_std/2, alpha=0.5)
     return fig, ax
 
 
@@ -133,7 +149,8 @@ def plot_matrix(matrix, x=None, y=None, ax=None, fig=None, xlabel=None,
         y = np.arange(matrix.shape[0])
 
     im = ax.pcolormesh(
-        x, y, matrix, cmap=cmap, vmin=vmin, vmax=vmax, shading='auto')
+        x, y, matrix, cmap=cmap, vmin=vmin, vmax=vmax, shading='auto',
+        rasterized=True)
 
     # im = ax.imshow(matrix, interpolation='nearest', cmap=cmap,
     #                vmin=vmin, vmax=vmax, extent=[x_min, x_max, y_min, y_max],
@@ -159,16 +176,14 @@ def plot_matrix(matrix, x=None, y=None, ax=None, fig=None, xlabel=None,
 
 def plot_surf(Z, x=None, y=None, ax=None, xlabel=None, ylabel=None,
               zlabel=None, zlim=None, vmin=None, vmax=None, cmap_range=None,
-              **kwargs):
+              fig=None, **kwargs):
     m, n = Z.shape
-    if x is None and y is None:
-        X, Y = np.meshgrid(np.arange(n), np.arange(m))
-    else:
-        x, y = np.asarray(x), np.asarray(y)
-        if len(np.squeeze(x).shape) < 2:
-            X, Y = np.meshgrid(x, y)
-        else:
-            X, Y = x, y
+    if x is None:
+        x = np.arange(Z.shape[0])
+    if y is None:
+        y = np.arange(Z.shape[1])
+
+    X, Y = np.meshgrid(x, y)
 
     if cmap_range is not None:
         norm = mlp.colors.Normalize(vmin=cmap_range[0], vmax=cmap_range[1])
@@ -182,20 +197,19 @@ def plot_surf(Z, x=None, y=None, ax=None, xlabel=None, ylabel=None,
 
     if ax is None:
         fig, ax = plt.subplots(
-            subplot_kw={'projection': '3d'}, constrained_layout=True)
-    else:
-        fig = None
+            subplot_kw={'projection': '3d'})
     surf = ax.plot_surface(X, Y, Z, **basic_settings)
     ax.set_zlim(zlim)
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
     ax.set_zlabel(zlabel)
     if fig is not None:
-        fig.colorbar(surf, shrink=0.6, pad=0.15)
+        # fig.colorbar(surf, shrink=0.6, pad=0.12)
+        plt.colorbar(surf, fraction=0.03, pad=0.12)
     return fig, ax
 
 
-def plot_bar(*mean_std, legend=None, **kwargs):
+def plot_errorbar(*mean_std, ax=None, fig=None, legend=None, **kwargs):
     """plot error-bar figure given mean and std values, also support
     matplotlib figure settings
     Args:
@@ -205,7 +219,9 @@ def plot_bar(*mean_std, legend=None, **kwargs):
     n_set = len(mean_std)
     n_var = mean_std[0][0].shape[0]
 
-    fig, ax = plt.subplots(1, 1)
+    if ax is None:
+        fig, ax = subplots(1, 1)
+
     bar_width = 0.8/n_set
     for i, [mean, std] in enumerate(mean_std):
         x = np.arange(n_var) + bar_width*(i-np.floor(n_set/2))
@@ -340,16 +356,16 @@ def plot_spectrogram(wav, frame_len=1024, frame_shift=None, fs=None,
     if fs is None:
         fs = 1
         t_scale = 1
-        t_label = '采样点(n)'
-        freq_label = '归一化频率'
+        t_label = 'sample(n)'
+        freq_label = 'normalized freq'
     else:
         if wav_len < fs*0.05:
             t_scale = 1000
-            t_label = '时间(ms)'
+            t_label = 'time(ms)'
         else:
             t_scale = 1
-            t_label = '时间(s)'
-        freq_label = '频率(kHz)'
+            t_label = 'time(s)'
+        freq_label = 'freq(kHz)'
 
     if ax is None:
         fig, ax = subplots(1, 1)
@@ -397,9 +413,9 @@ def plot_spectrum(wav, fs=None, ax=None, fig=None):
 
     if fs is None:
         fs = 1
-        freq_label = '归一化频率'
+        freq_label = 'normalized freq'
     else:
-        freq_label = '频率(Hz)'
+        freq_label = 'freq(Hz)'
 
     if ax is None:
         fig, ax = subplots(1, 1)
@@ -515,8 +531,9 @@ def savefig(fig, fig_name=None, fig_dir='./images'):
 def test_bar():
     mean_std_all = [[np.random.normal(size=5), np.random.rand(5)]
                     for i in range(5)]
-    fig = plot_bar(*mean_std_all, ylabel='ylabel',
-                   xticklabels=['label{}'.format(i) for i in range(4)])
+    fig = plot_errorbar(
+        *mean_std_all, ylabel='ylabel',
+        xticklabels=['label{}'.format(i) for i in range(4)])
     savefig(fig, name='bar.png', dir='images/plot_tools/')
 
 

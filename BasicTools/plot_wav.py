@@ -93,7 +93,7 @@ def main():
         for wav_i in range(n_wav):
             ax_slice = slice(wav_i*max_chann_num, (wav_i+1)*max_chann_num)
             plot_wav(
-                wav_path=args.wav_path[wav_i], ax=ax[ax_slice],
+                wav_path=args.wav_path[wav_i], ax=ax[:, ax_slice],
                 frame_len=args.frame_len, mix_channel=False, cmap=cmap)
 
     n_row, n_col = ax.shape

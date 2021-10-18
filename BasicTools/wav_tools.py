@@ -212,16 +212,26 @@ def cal_snr(tar, inter, frame_len=None, frame_shift=None, is_plot=None):
     return snr
 
 
-def cal_delay(x1, x2, method='gcc'):
+def cal_delay(x1, x2, method='gcc', max_delay=None):
     """
     """
-    # fs = 1
+    from .GCC import cal_ccf, cal_gcc_phat
+
     x1_len = x1.shape[0]
     x2_len = x2.shape[0]
 
     if method == 'gcc':
-        ccf = np.correlate(x1, x2, mode='full')
-        delay = np.argmax(ccf)-x2_len+1
+        gcc = cal_ccf(x1, x2, max_delay=max_delay)
+        if max_delay is not None:
+            delay = np.argmax(gcc)-max_delay
+        else:
+            delay = np.argmax(gcc)-x1_len
+    elif method == 'gcc_phat':
+        gcc = cal_gcc_phat(x1, x2, max_delay=max_delay)
+        if max_delay is not None:
+            delay = np.argmax(gcc)-max_delay
+        else:
+            delay = np.argmax(gcc)-x1_len
     elif method == 'phase':
         x_len = np.max([x1_len, x2_len])
         half_x_len = np.int(np.floor(x_len/2))
