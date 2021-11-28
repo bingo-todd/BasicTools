@@ -2,6 +2,7 @@ import matplotlib as mlp
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 from matplotlib import cm
+from matplotlib import ticker
 import numpy as np
 import os
 import datetime
@@ -33,7 +34,7 @@ plt.rcParams['figure.dpi'] = 200
 
 def get_figsize(n_row, n_col):
     width = 2.5+2*n_col
-    height = 1.5+2*n_row
+    height = 1+2*n_row
     return [width, height]
 
 
@@ -108,6 +109,21 @@ def imshow(Z, ax=None, x_lim=None, y_lim=None, vmin=None, vmax=None, **kwargs):
     ax.imshow(
         Z_norm, extent=[*x_lim, *y_lim], **basic_settings, origin='lower')
     return fig, ax
+
+
+def scatter_with_trend(x=None, y=None, ax=None, interp_order=2):
+    from scipy.interpolate import interp1d
+    if not isinstance(x, np.ndarray):
+        raise Exception('x is not ndarray')
+    if y is None:
+        x, y = np.arange(x.shape[0]), x
+    ax.plot(x, y, 'x')
+
+    n_sample = x.shape[0]
+    n_sample_interp = 10*n_sample
+    interp_x = np.linspace(x[0], x[-1], n_sample_interp)
+    interp_y = interp1d(x, y, kind=interp_order)(interp_x)
+    ax.plot(interp_x, interp_y)
 
 
 def plot_distribute(x=None, y=None, ax=None, fig=None):
@@ -209,7 +225,8 @@ def plot_surf(Z, x=None, y=None, ax=None, xlabel=None, ylabel=None,
     return fig, ax
 
 
-def plot_errorbar(*mean_std, ax=None, fig=None, legend=None, **kwargs):
+def plot_errorbar(*mean_std, ax=None, fig=None, xlabels=None, legend=None,
+                  **kwargs):
     """plot error-bar figure given mean and std values, also support
     matplotlib figure settings
     Args:
@@ -222,12 +239,16 @@ def plot_errorbar(*mean_std, ax=None, fig=None, legend=None, **kwargs):
     if ax is None:
         fig, ax = subplots(1, 1)
 
-    bar_width = 0.8/n_set
+    bar_width = 0.75/n_set
+    bar_width_valid = 0.7/n_set
     for i, [mean, std] in enumerate(mean_std):
-        x = np.arange(n_var) + bar_width*(i-np.floor(n_set/2))
-        ax.bar(x, mean, yerr=std, width=bar_width)
+        x = np.arange(n_var) + bar_width*(i-(n_set-1)/2)
+        ax.bar(x, mean, yerr=std, width=bar_width_valid)
 
-    ax.set_xticks(range(n_var))
+    if xlabels is None:
+        xlabels = [f'{i}' for i in range(n_var)]
+    ax.xaxis.set_major_locator(ticker.FixedLocator(range(n_var)))
+    ax.xaxis.set_major_formatter(ticker.FixedFormatter(xlabels))
     if legend is not None:
         ax.legend(legend)
 
@@ -471,6 +492,22 @@ def plot_break_axis(x1, x2):
     ax[1].plot((1 - d, 1 + d), (1 - d, 1 + d), **kwargs)
 
     return fig
+
+
+def annoate(ax, text, xy, xytext, xycoords='data', textcoords='data',
+            va='center', ha='center', **args):
+    #
+    raise Exception('unfinished')
+    renderer = ax.get_figure().canvas.get_renderer()
+    font_props = mlp.font_manager.FontProperties()
+    # get all texts
+    pre_text_rect_all = []
+    for text in ax.texts:
+        text_rect = text.get_window_extent()
+        pre_text_rect_all.append(text_rect)
+    #
+    text_rect = renderer.get_text_width_height_descent(
+        text, prop=font_props, ismath=None)
 
 
 class GIF:
