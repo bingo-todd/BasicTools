@@ -142,7 +142,7 @@ def plot_distribute(x=None, y=None, ax=None, fig=None):
 
 def plot_matrix(matrix, x=None, y=None, ax=None, fig=None, xlabel=None,
                 ylabel=None, show_value=False, normalize=True, vmin=None,
-                vmax=None, aspect='auto', cmap=plt.cm.coolwarm):
+                vmax=None, aspect='auto', cmap=None):
     """
     This function prints and plots matrix.
     Normalization can be applied by setting `normalize=True`.
@@ -164,9 +164,14 @@ def plot_matrix(matrix, x=None, y=None, ax=None, fig=None, xlabel=None,
     if y is None:
         y = np.arange(matrix.shape[0])
 
-    im = ax.pcolormesh(
-        x, y, matrix, cmap=cmap, vmin=vmin, vmax=vmax, shading='auto',
-        rasterized=True)
+    if cmap is not None:
+        im = ax.pcolormesh(
+            x, y, matrix, vmin=vmin, vmax=vmax, shading='auto',  cmap=cmap,
+            rasterized=True)
+    else:
+        im = ax.pcolormesh(
+            x, y, matrix, vmin=vmin, vmax=vmax, shading='auto',
+            rasterized=True)
 
     # im = ax.imshow(matrix, interpolation='nearest', cmap=cmap,
     #                vmin=vmin, vmax=vmax, extent=[x_min, x_max, y_min, y_max],
@@ -327,7 +332,7 @@ def plot_wav(wav, fs=None, label=None, ax_wav=None, plot_spec=False,
 
     if ax_wav is not None:
         t = np.arange(wav_len)/fs*t_scale
-        ax_wav.plot(t, wav, label=label)
+        ax_wav.plot(t, wav, label=label, linewidth=1)
         ax_wav.set_xlabel(t_label)
         ax_wav.set_xlim([t[0], t[-1]])
         if max_amp is not None:
@@ -357,7 +362,8 @@ def plot_wav(wav, fs=None, label=None, ax_wav=None, plot_spec=False,
 def plot_spectrogram(wav, frame_len=1024, frame_shift=None, fs=None,
                      use_gtf=False, cfs=None,
                      freq_low=None, freq_high=None, n_band=None,
-                     ax=None, fig=None):
+                     ax=None, fig=None, vmin=None, vmax=None,
+                     return_specgram_amp=False):
     """
     Args:
         wav: waveform
@@ -405,20 +411,24 @@ def plot_spectrogram(wav, frame_len=1024, frame_shift=None, fs=None,
         n_freq_bin = specgram_amp.shape[1]
         freqs = np.arange(n_freq_bin)/frame_len*fs
 
-    max_value = np.max(specgram_amp)
-    min_value = max_value-60
+    if vmax is None:
+        vmax = np.max(specgram_amp)
+    if vmin is None:
+        vmin = vmax-80
     n_frame = specgram_amp.shape[0]
     t = np.arange(n_frame)*frame_shift/fs/t_scale
     plot_matrix(
-        specgram_amp.T,
-        x=t, y=freqs,
-        vmin=min_value, vmax=max_value,
+        specgram_amp.T, x=t, y=freqs,
+        vmin=vmin, vmax=vmax, cmap=plt.cm.coolwarm,
         ax=ax, fig=fig)
     ax.set_xlabel(t_label)
     ax.set_yscale('mel')
     ax.yaxis.set_major_formatter(lambda x, pos: f'{x*1e-3}')
     ax.set_ylabel(freq_label)
-    return fig, ax
+    if return_specgram_amp:
+        return fig, ax, specgram_amp
+    else:
+        return fig, ax
 
 
 def plot_spectrum(wav, fs=None, ax=None, fig=None):
