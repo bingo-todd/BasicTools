@@ -22,7 +22,7 @@ plt.rcParams['lines.linewidth'] = 2
 plt.rcParams['legend.fontsize'] = 10
 
 plt.rcParams['mathtext.fontset'] = 'custom'
-plt.rcParams['mathtext.bf'] = 'Cambria:bold'
+plt.rcParams['mathtext.bf'] = 'Cambria'
 plt.rcParams['mathtext.cal'] = 'Cambria'
 plt.rcParams['mathtext.rm'] = 'Cambria'
 plt.rcParams['mathtext.sf'] = 'Cambria'
@@ -30,6 +30,14 @@ plt.rcParams['mathtext.tt'] = 'Cambria'
 plt.rcParams['mathtext.it'] = 'Cambria:italic'
 
 plt.rcParams['figure.dpi'] = 200
+
+linestyles = (
+    'solid',
+    (0, (1, 1)),
+    (0, (5, 1)),
+    (0, (3, 1, 1, 1)),
+    (0, (3, 1, 1, 1, 1, 1)))
+
 
 
 def get_figsize(n_row, n_col):
@@ -197,7 +205,7 @@ def plot_matrix(matrix, x=None, y=None, ax=None, fig=None, xlabel=None,
 
 def plot_surf(Z, x=None, y=None, ax=None, xlabel=None, ylabel=None,
               zlabel=None, zlim=None, vmin=None, vmax=None, cmap_range=None,
-              fig=None, **kwargs):
+              fig=None, figsize=None, **kwargs):
     m, n = Z.shape
     if x is None:
         x = np.arange(Z.shape[0])
@@ -217,16 +225,20 @@ def plot_surf(Z, x=None, y=None, ax=None, xlabel=None, ylabel=None,
     basic_settings.update(kwargs)
 
     if ax is None:
-        fig, ax = plt.subplots(
-            subplot_kw={'projection': '3d'})
-    surf = ax.plot_surface(X, Y, Z, **basic_settings)
+        if figsize is None:
+            fig, ax = plt.subplots(subplot_kw={'projection': '3d'})
+        else:
+            fig, ax = plt.subplots(
+                subplot_kw={'projection': '3d'}, figsize=figsize)
+
+    surf = ax.plot_surface(X, Y, Z.T, **basic_settings)
     ax.set_zlim(zlim)
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
     ax.set_zlabel(zlabel)
     if fig is not None:
-        # fig.colorbar(surf, shrink=0.6, pad=0.12)
-        plt.colorbar(surf, fraction=0.03, pad=0.12)
+        plt.colorbar(surf, shrink=0.5, pad=0.1)
+        # plt.colorbar(surf, fraction=0.02, pad=0.12)
     return fig, ax
 
 
