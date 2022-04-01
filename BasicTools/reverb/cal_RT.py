@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from . import plot_tools
+from .. import plot_tools
 
 
 def cal_rt(rir, fs, is_plot=False):
