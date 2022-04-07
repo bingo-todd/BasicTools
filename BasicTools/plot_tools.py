@@ -19,7 +19,8 @@ plt.rcParams['font.sans-serif'] = ['SimSun']
 plt.rcParams['font.size'] = 10
 plt.rcParams['axes.unicode_minus'] = False
 plt.rcParams['lines.linewidth'] = 2
-plt.rcParams['legend.fontsize'] = 10
+plt.rcParams['legend.fontsize'] = 8
+plt.rcParams['axes.titlesize'] = 10
 
 plt.rcParams['mathtext.fontset'] = 'custom'
 plt.rcParams['mathtext.bf'] = 'Cambria'
