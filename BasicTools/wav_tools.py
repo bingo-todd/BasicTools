@@ -358,12 +358,12 @@ def truncate_silence(x, frame_len, trunc_type="both", theta=40):
     return x[start_pos:end_pos]
 
 
-def hz2erbscal(freq):
+def hz2erbscale(freq):
     """convert Hz to ERB scale"""
     return 21.4*np.log10(4.37*freq/1e3+1)
 
 
-def erbscal2hz(erb_num):
+def erbscale2hz(erb_num):
     """convert ERB scale to Hz"""
     return (10**(erb_num/21.4)-1)/4.37*1e3
 
