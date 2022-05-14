@@ -19,7 +19,8 @@ plt.rcParams['font.sans-serif'] = ['SimSun']
 plt.rcParams['font.size'] = 10
 plt.rcParams['axes.unicode_minus'] = False
 plt.rcParams['lines.linewidth'] = 2
-plt.rcParams['legend.fontsize'] = 10
+plt.rcParams['legend.fontsize'] = 8
+plt.rcParams['axes.titlesize'] = 10
 
 plt.rcParams['mathtext.fontset'] = 'custom'
 plt.rcParams['mathtext.bf'] = 'Cambria'
@@ -39,7 +40,6 @@ linestyles = (
     (0, (3, 1, 1, 1, 1, 1)))
 
 
-
 def get_figsize(n_row, n_col):
     width = 2.5+2*n_col
     height = 1+2*n_row
@@ -52,6 +52,10 @@ def subplots(n_row, n_col, **kwargs):
     fig, ax = plt.subplots(
         n_row, n_col, constrained_layout=True, **kwargs)
     return fig, ax
+
+
+def close(fig='all'):
+    plt.close(fig)
 
 
 def line_collector(plot_func):
@@ -321,16 +325,16 @@ def plot_wav(wav, fs=None, label=None, ax_wav=None, plot_spec=False,
     if fs is None:
         fs = 1
         t_scale = 1
-        t_label = '采样点(n)'
-        freq_label = '归一化频率'
+        t_label = 'sample(n)'
+        freq_label = 'normalized freq'
     else:
         if wav_len < fs*0.05:
             t_scale = 1000
-            t_label = '时间(ms)'
+            t_label = 'time(ms)'
         else:
             t_scale = 1
-            t_label = '时间(s)'
-        freq_label = '频率(Hz)'
+            t_label = 'time(s)'
+        freq_label = 'freq(Hz)'
 
     fig = None
     # if ax_wav and ax_specgram are not specified
