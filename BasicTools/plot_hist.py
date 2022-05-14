@@ -3,11 +3,12 @@ import numpy as np
 import argparse
 import matplotlib.pyplot as plt
 from .parse_file import file2dict
+from . import plot_tools
 
 
 def plot_hist(log_path, ax=None, fig=None, n_bin=-1, xlim=None, var_i=0,
-              file_name_required=None, x_label=None, fig_path=None,
-              interactive=False):
+              file_name_required=None, x_label=None, fig_size=None,
+              fig_path=None, interactive=False):
     log = file2dict(log_path, numeric=True)
     values = None
     if file_name_required is None:
@@ -45,7 +46,10 @@ def plot_hist(log_path, ax=None, fig=None, n_bin=-1, xlim=None, var_i=0,
         centers = (bin_edges[1:] + bin_edges[:-1])/2
 
     if ax is None:
-        fig, ax = plt.subplots(1, 1)
+        if fig_size is None:
+            fig, ax = plot_tools.subplots(1, 1)
+        else:
+            fig, ax = plot_tools.subplots(1, 1, figsize=fig_size[:2])
     ax.bar(centers, freqs, width=bin_width, edgecolor='black')
     ax.set_ylabel('Percentage(%)')
     if x_label is not None:
@@ -72,6 +76,8 @@ def parse_args():
                         default=None, help='')
     parser.add_argument('--x-label', dest='x_label', type=str, default=None,
                         help='')
+    parser.add_argument('--fig-size', dest='fig_size', type=float, nargs=2,
+                        default=None, help='')
     parser.add_argument('--fig-path', dest='fig_path', type=str, default=None,
                         help='')
     parser.add_argument('--interactive', dest='interactive', type=str,
@@ -88,6 +94,7 @@ def main():
               xlim=args.xlim,
               file_name_required=args.file_name_required,
               x_label=args.x_label,
+              fig_size=args.fig_size,
               fig_path=args.fig_path,
               interactive=args.interactive == 'true')
 

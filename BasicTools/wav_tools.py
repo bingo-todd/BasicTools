@@ -8,20 +8,20 @@ import soundfile as sf
 import audioread
 
 
-def read(wav_path, tar_fs=None):
+def read(wav_path, fs_tar=None):
     """ read wav file, implete with soundfile
     args:
         wav_path
-        tar_fs
+        fs_tar
     returns
         waveform, fs
     """
     wav_path = os.path.expanduser(wav_path)
     try:
         wav, fs = sf.read(wav_path)
-        if tar_fs is not None and tar_fs != fs:
-            wav = resample(wav, fs, tar_fs)
-            fs = tar_fs
+        if fs_tar is not None and fs_tar != fs:
+            wav = resample(wav, fs, fs_tar)
+            fs = fs_tar
     except Exception:
         with audioread.audio_open(wav_path) as f:
             n_channel = f.channels
@@ -45,12 +45,12 @@ def write(x, fs, wav_path, n_bit=24):
     sf.write(file=wav_path, data=x, samplerate=fs, subtype=subtype)
 
 
-def resample(x, src_fs, tar_fs, axis=0):
+def resample(x, fs_src, fs_tar, axis=0):
     """ resample signal, implete with librosa
     Args:
         x: signal, resampling in the first dimension
-        src_fs: original sample frequency
-        tar_fs: target sample frequency
+        fs_src: original sample frequency
+        fs_tar: target sample frequency
     Returns:
         resampled data
     """
@@ -61,7 +61,7 @@ def resample(x, src_fs, tar_fs, axis=0):
 
     #
     x = np.asfortranarray(x)
-    x_resampled = librosa.resample(x, src_fs, tar_fs)
+    x_resampled = librosa.resample(x, fs_src, fs_tar)
     x_resampled = np.asarray(x_resampled)
     x_resampled = x_resampled.T
     return x_resampled
