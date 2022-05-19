@@ -39,6 +39,8 @@ linestyles = (
     (0, (3, 1, 1, 1)),
     (0, (3, 1, 1, 1, 1, 1)))
 
+colors = plt.get_cmap('tab10').colors
+
 
 def get_figsize(n_row, n_col):
     width = 2.5+2*n_col
