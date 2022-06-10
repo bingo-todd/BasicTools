@@ -15,12 +15,12 @@ import GTF
 from .scale import mel, erb
 from . import fft
 
-plt.rcParams['font.sans-serif'] = ['SimSun']
-plt.rcParams['font.size'] = 10
+plt.rcParams['font.sans-serif'] = ['SimHei']  # ['SimSun']
+plt.rcParams['font.size'] = 14  # 10
 plt.rcParams['axes.unicode_minus'] = False
 plt.rcParams['lines.linewidth'] = 2
-plt.rcParams['legend.fontsize'] = 8
-plt.rcParams['axes.titlesize'] = 10
+plt.rcParams['legend.fontsize'] = 10  # 8
+plt.rcParams['axes.titlesize'] = 14  # 10
 
 plt.rcParams['mathtext.fontset'] = 'custom'
 plt.rcParams['mathtext.bf'] = 'Cambria'
@@ -350,7 +350,7 @@ def plot_wav(wav, fs=None, label=None, ax_wav=None, plot_spec=False,
 
     if ax_wav is not None:
         t = np.arange(wav_len)/fs*t_scale
-        ax_wav.plot(t, wav, label=label, linewidth=1)
+        ax_wav.plot(t, wav, label=label)
         ax_wav.set_xlabel(t_label)
         ax_wav.set_xlim([t[0], t[-1]])
         if max_amp is not None:
