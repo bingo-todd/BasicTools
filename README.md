@@ -3,47 +3,6 @@ A collection of python scripts,
 
 ** this doc need update, but all scripts work well, I used them in my daily work **
 
-Files structure
-
-```shell
-├── BasicTools
-│   ├── Dataset.py
-│   ├── DspTools.py
-│   ├── easy_parallel.py
-│   ├── fft.py
-│   ├── gcc.py
-│   ├── get_file_path.py
-│   ├── GPU_Filter.py
-│   ├── GPU_Filter_tf1.14.py
-│   ├── graph.py
-│   ├── __init__.py
-│   ├── nd_index.py
-│   ├── normalize.py
-│   ├── parse_file.py
-│   ├── plot_tools.py
-│   ├── plot_wav.py
-│   ├── ProcessBarMulti.py
-│   ├── ProcessBar.py
-│   ├── ProcessBar_test.py
-│   ├── query_resrc.py
-│   ├── reverb
-│   ├── scale
-│   ├── unit_convert.py
-│   ├── VAD.py
-│   └── wav_tools.py
-├── examples
-│   ├── data
-│   ├── DspTools_example.py
-│   ├── GPU_filter_test.py
-│   ├── images
-│   ├── __init__.py
-│   └── scale_test.py
-├── install.sh
-├── __main__.py
-├── README.md
-└── setup.py
-```
-
 ## Dataset
 
 Read audio dataset and return a sample generator, used for DNN model. 
@@ -86,8 +45,6 @@ tasks = np.random.rand(32, 2)
 outputs = easy_parallel(test_func, tasks, show_process=True)                
 print(outputs)        
 ```
-
-
 
 ## ProcessBar
 
@@ -140,3 +97,16 @@ wav_tools
   Comparison to `filter` in `scipy`(marked as 'cpu', cpu consumption was around 50%, GPU: TITAN RTX， CPU:i9-9980XE)
 
   <img src='examples/images/GPU_Filter/brir_filter_cpu_gpu_diff.png' width=45%>
+
+## send_email
+send simple notification to your email box. Before using, create `.send_email.cfg` in your home directory
+eg.
+```
+[sender]
+add = 
+pwd = 
+stmp_add = 
+stmp_port = 
+[receiver]
+add = 
+```
