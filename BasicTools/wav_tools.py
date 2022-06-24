@@ -25,6 +25,7 @@ def read(wav_path, fs_tar=None):
     except Exception:
         with audioread.audio_open(wav_path) as f:
             n_channel = f.channels
+            fs = f.samplerate
             pcm_16bit_segs = [item for item in f]
             wav_segs = [np.frombuffer(item, dtype=np.int16)
                         for item in pcm_16bit_segs]
@@ -32,6 +33,8 @@ def read(wav_path, fs_tar=None):
                 wav_segs = [np.reshape(item, [-1, n_channel])
                             for item in wav_segs]
             wav = np.concatenate(wav_segs, axis=0)
+            # convert to float
+            wav = wav.astype(np.float)/32768  # 2**15
     return [wav, fs]
 
 
